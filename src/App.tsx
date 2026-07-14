@@ -1,25 +1,26 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useStore } from "@/store";
 import { useThemeEffect } from "@/hooks/useTheme";
-import Login from "@/pages/Login";
-import Unlock from "@/pages/Unlock";
-import Dashboard from "@/pages/Dashboard";
-import Items from "@/pages/Items";
-import ItemDetail from "@/pages/ItemDetail";
-import Generator from "@/pages/Generator";
-import Authenticator from "@/pages/Authenticator";
-import Watchtower from "@/pages/Watchtower";
-import Settings from "@/pages/Settings";
-import Vaults from "@/pages/Vaults";
-import AdminSettings from "@/pages/AdminSettings";
-import Profile from "@/pages/Profile";
-import DocsHome from "@/pages/docs/DocsHome";
-import InstallationDoc from "@/pages/docs/InstallationDoc";
-import UsageDoc from "@/pages/docs/UsageDoc";
-import DevelopmentDoc from "@/pages/docs/DevelopmentDoc";
-import ApiDoc from "@/pages/docs/ApiDoc";
-import SecurityDoc from "@/pages/docs/SecurityDoc";
+
+const Login = lazy(() => import("@/pages/Login"));
+const Unlock = lazy(() => import("@/pages/Unlock"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Items = lazy(() => import("@/pages/Items"));
+const ItemDetail = lazy(() => import("@/pages/ItemDetail"));
+const Generator = lazy(() => import("@/pages/Generator"));
+const Authenticator = lazy(() => import("@/pages/Authenticator"));
+const Watchtower = lazy(() => import("@/pages/Watchtower"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Vaults = lazy(() => import("@/pages/Vaults"));
+const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const DocsHome = lazy(() => import("@/pages/docs/DocsHome"));
+const InstallationDoc = lazy(() => import("@/pages/docs/InstallationDoc"));
+const UsageDoc = lazy(() => import("@/pages/docs/UsageDoc"));
+const DevelopmentDoc = lazy(() => import("@/pages/docs/DevelopmentDoc"));
+const ApiDoc = lazy(() => import("@/pages/docs/ApiDoc"));
+const SecurityDoc = lazy(() => import("@/pages/docs/SecurityDoc"));
 
 // 受保护路由：需要认证且已解锁
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -60,6 +61,14 @@ function UnlockRoute() {
   return <Unlock />;
 }
 
+function Loading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-vault-bg">
+      <div className="w-8 h-8 border-4 border-vault-border border-t-vault-accent rounded-full animate-spin" />
+    </div>
+  );
+}
+
 export default function App() {
   useThemeEffect();
 
@@ -77,7 +86,8 @@ export default function App() {
 
   return (
     <Router>
-      <Routes>
+      <Suspense fallback={<Loading />}>
+        <Routes>
         {/* 文档页面（公开访问） */}
         <Route path="/docs" element={<DocsHome />} />
         <Route path="/docs/installation" element={<InstallationDoc />} />
@@ -212,6 +222,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      </Suspense>
     </Router>
   );
 }
