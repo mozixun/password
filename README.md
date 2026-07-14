@@ -109,15 +109,15 @@ pnpm run preview       # 预览构建产物
 
 ## 📖 文档
 
-- [安装指南](https://github.com/your-username/vaultkey/wiki/Installation)
-- [使用指南](https://github.com/your-username/vaultkey/wiki/Usage)
-- [开发指南](https://github.com/your-username/vaultkey/wiki/Development)
-- [API 文档](https://github.com/your-username/vaultkey/wiki/API)
-- [安全文档](https://github.com/your-username/vaultkey/wiki/Security)
+- [安装指南](/docs/installation)
+- [使用指南](/docs/usage)
+- [开发指南](/docs/development)
+- [API 文档](/docs/api)
+- [安全文档](/docs/security)
 
 ## 🤝 贡献
 
-欢迎贡献代码！请阅读 [开发指南](https://github.com/your-username/vaultkey/wiki/Development) 了解贡献流程。
+欢迎贡献代码！请阅读 [开发指南](/docs/development) 了解贡献流程。
 
 ## 📄 许可证
 

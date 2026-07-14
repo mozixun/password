@@ -14,6 +14,12 @@ import Settings from "@/pages/Settings";
 import Vaults from "@/pages/Vaults";
 import AdminSettings from "@/pages/AdminSettings";
 import Profile from "@/pages/Profile";
+import DocsHome from "@/pages/docs/DocsHome";
+import InstallationDoc from "@/pages/docs/InstallationDoc";
+import UsageDoc from "@/pages/docs/UsageDoc";
+import DevelopmentDoc from "@/pages/docs/DevelopmentDoc";
+import ApiDoc from "@/pages/docs/ApiDoc";
+import SecurityDoc from "@/pages/docs/SecurityDoc";
 
 // 受保护路由：需要认证且已解锁
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -72,6 +78,14 @@ export default function App() {
   return (
     <Router>
       <Routes>
+        {/* 文档页面（公开访问） */}
+        <Route path="/docs" element={<DocsHome />} />
+        <Route path="/docs/installation" element={<InstallationDoc />} />
+        <Route path="/docs/usage" element={<UsageDoc />} />
+        <Route path="/docs/development" element={<DevelopmentDoc />} />
+        <Route path="/docs/api" element={<ApiDoc />} />
+        <Route path="/docs/security" element={<SecurityDoc />} />
+
         {/* 认证页面 */}
         <Route
           path="/auth/login"

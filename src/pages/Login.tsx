@@ -1,7 +1,7 @@
 // VaultKey 密码管理器 - 登录/注册页面
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Shield, Eye, EyeOff, Mail, Lock, ArrowRight, KeyRound, Fingerprint, Smartphone, Monitor } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Shield, Eye, EyeOff, Mail, Lock, ArrowRight, KeyRound, Fingerprint, Smartphone, Monitor, BookOpen } from 'lucide-react';
 import useStore from '@/store';
 
 // 登录/注册表单类型
@@ -408,6 +408,31 @@ export default function Login() {
         <p className="text-center text-vault-text-muted text-xs mt-6 leading-relaxed">
           您的数据经过端到端加密，我们无法读取您的主密码
         </p>
+
+        {/* 文档链接 */}
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <Link
+            to="/docs/installation"
+            className="flex items-center gap-1.5 text-xs text-vault-text-muted hover:text-vault-accent transition-colors"
+          >
+            <BookOpen size={12} />
+            <span>安装指南</span>
+          </Link>
+          <Link
+            to="/docs/usage"
+            className="flex items-center gap-1.5 text-xs text-vault-text-muted hover:text-vault-accent transition-colors"
+          >
+            <BookOpen size={12} />
+            <span>使用指南</span>
+          </Link>
+          <Link
+            to="/docs/security"
+            className="flex items-center gap-1.5 text-xs text-vault-text-muted hover:text-vault-accent transition-colors"
+          >
+            <BookOpen size={12} />
+            <span>安全文档</span>
+          </Link>
+        </div>
       </div>
     </div>
   );
