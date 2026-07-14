@@ -2,7 +2,7 @@ import paramiko
 import os
 
 HOST = "124.222.162.174"
-USER = "ubuntu"
+USER = "shaoye"
 PASSWORD = "520SHENxin"
 PROJECT_DIR = "/opt/vaultkey"
 
