@@ -37,6 +37,18 @@ pnpm run build
 
 构建产物将输出到 `dist` 目录。
 
+### 5. 类型检查
+
+```bash
+pnpm run check
+```
+
+### 6. 代码检查
+
+```bash
+pnpm run lint
+```
+
 ## 浏览器插件
 
 ### Chrome 安装
@@ -106,4 +118,28 @@ PORT=3001
 NODE_ENV=development
 JWT_SECRET=your-jwt-secret
 DATABASE_URL=postgres://user:password@localhost:5432/vaultkey
+```
+
+## 部署
+
+### GitHub Pages
+
+项目已配置 GitHub Actions 自动部署到 GitHub Pages。每次推送到 `main` 分支时，自动执行构建和部署。
+
+部署地址：`https://your-username.github.io/vaultkey/`
+
+### Vercel
+
+项目已配置 Vercel 部署。推送代码后自动部署。
+
+部署地址：`https://vaultkey.vercel.app/`
+
+### Docker
+
+```bash
+# 构建镜像
+docker build -t vaultkey .
+
+# 运行容器
+docker run -p 5173:5173 vaultkey
 ```
