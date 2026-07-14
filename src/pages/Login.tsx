@@ -48,7 +48,7 @@ export default function Login() {
   }, []);
 
   // 登录提交
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -61,12 +61,16 @@ export default function Login() {
       return;
     }
 
-    auth.login(email, password, rememberDevice);
-    navigate('/dashboard');
+    try {
+      await auth.login(email, password, rememberDevice);
+      navigate('/dashboard');
+    } catch {
+      setError('登录失败：邮箱或密码错误');
+    }
   };
 
   // 注册提交
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -87,8 +91,16 @@ export default function Login() {
       return;
     }
 
-    auth.register(email, password, rememberDevice);
-    navigate('/dashboard');
+    try {
+      const result = await auth.register(email, password, rememberDevice);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError('注册失败：该邮箱已被注册');
+      }
+    } catch {
+      setError('注册失败，请稍后重试');
+    }
   };
 
   return (

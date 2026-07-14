@@ -37,33 +37,36 @@ export default function Unlock() {
 
   // 检测信任设备，自动解锁
   useEffect(() => {
-    if (auth.isAuthenticated && auth.isLocked && auth.email) {
-      try {
-        const storedDevice = localStorage.getItem('vaultkey-trusted-device');
-        if (storedDevice) {
-          const deviceData = JSON.parse(storedDevice);
-          if (deviceData.email === auth.email && deviceData.deviceId) {
-            setIsAnimating(true);
-            setTimeout(() => {
-              auth.unlockWithTrustedDevice();
-              navigate('/dashboard', { replace: true });
-            }, 1500);
-            return;
+    const checkTrustedDevice = async () => {
+      if (auth.isAuthenticated && auth.isLocked && auth.email) {
+        try {
+          const storedDevice = localStorage.getItem('vaultkey-trusted-device');
+          if (storedDevice) {
+            const deviceData = JSON.parse(storedDevice);
+            if (deviceData.email === auth.email && deviceData.deviceId) {
+              setIsAnimating(true);
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+              const success = await auth.unlockWithTrustedDevice();
+              if (success) {
+                navigate('/dashboard', { replace: true });
+              }
+              return;
+            }
           }
+        } catch {
+          // ignore
         }
-      } catch {
-        // ignore
       }
-    }
-    const timer = setTimeout(() => setIsAnimating(true), 100);
-    return () => clearTimeout(timer);
+      const timer = setTimeout(() => setIsAnimating(true), 100);
+      return () => clearTimeout(timer);
+    };
+
+    checkTrustedDevice();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  
-
   // 解锁提交
-  const handleUnlock = (e: React.FormEvent) => {
+  const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -77,7 +80,7 @@ export default function Unlock() {
       return;
     }
 
-    const success = auth.unlock(password);
+    const success = await auth.unlock(password);
     if (success) {
       navigate('/dashboard');
     } else {

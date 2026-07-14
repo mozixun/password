@@ -1,0 +1,8 @@
+- [x] Login.tsx handleLogin 使用 async/await 正确处理认证
+- [x] Login.tsx handleRegister 使用 async/await 正确处理注册
+- [x] Login.tsx 认证失败时停留在登录页面并显示错误
+- [x] Unlock.tsx handleUnlock 使用 async/await 正确处理解锁
+- [x] Unlock.tsx 解锁失败时显示正确的剩余尝试次数
+- [x] Unlock.tsx 信任设备自动解锁等待认证完成后再导航
+- [x] npm run build 零错误通过
+- [x] npm run lint 零错误零警告
