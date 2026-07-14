@@ -30,7 +30,7 @@ const docItems: DocItem[] = [
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { t } = useTranslation();
+  useTranslation();
 
   const getCurrentDocTitle = () => {
     const current = docItems.find((item) => location.pathname.startsWith(item.path));

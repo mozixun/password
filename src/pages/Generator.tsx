@@ -213,9 +213,12 @@ export default function Generator() {
   useEffect(() => {
     if (activeTab === 'password') {
       generator.generatePassword();
+    } else {
+      const passphrase = generatePassphraseLocal();
+      generator.addToHistory(passphrase, 'passphrase', passphrase.length);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, generator.length, generator.uppercase, generator.lowercase, generator.digits, generator.symbols, generator.readable, readableMode]);
+  }, [activeTab, generator.length, generator.uppercase, generator.lowercase, generator.digits, generator.symbols, generator.readable, readableMode, wordCount, separator, capitalize, includeNumbers]);
 
   // 强度计算
   const strength = calculateStrength(displayPassword);

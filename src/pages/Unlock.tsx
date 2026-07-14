@@ -95,7 +95,7 @@ export default function Unlock() {
   };
 
   // 使用恢复密钥解锁
-  const handleRecoveryUnlock = (e: React.FormEvent) => {
+  const handleRecoveryUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     setRecoveryKeyError('');
 
@@ -104,7 +104,7 @@ export default function Unlock() {
       return;
     }
 
-    const success = auth.unlockWithRecoveryKey(recoveryKeyInput);
+    const success = await auth.unlockWithRecoveryKey(recoveryKeyInput);
     if (success) {
       navigate('/dashboard');
     } else {

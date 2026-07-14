@@ -1947,9 +1947,20 @@ const useStore = create<StoreState>()((set, get) => ({
         }
 
         if (item.type === 'credit_card' && item.expiryDate) {
-          const expiryDate = new Date(item.expiryDate);
+          const [month, year] = item.expiryDate.split('/').map(Number);
+          let expiryDate: Date;
+          if (!isNaN(month) && !isNaN(year)) {
+            const fullYear = year >= 100 ? year : year + 2000;
+            expiryDate = new Date(fullYear, month, 0);
+          } else {
+            expiryDate = new Date(item.expiryDate);
+          }
           const now = new Date();
           const threeMonthsLater = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
+          
+          if (isNaN(expiryDate.getTime())) {
+            return;
+          }
           
           if (expiryDate < now) {
             alerts.push({

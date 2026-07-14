@@ -308,7 +308,7 @@ export default function Login() {
 
           {/* 恢复密钥表单 */}
           {activeTab === 'recovery' && (
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               setError('');
               if (!recoveryKey.trim()) {
@@ -319,7 +319,8 @@ export default function Login() {
                 setError('新密码至少需要8个字符');
                 return;
               }
-              if (auth.unlockWithRecoveryKey(recoveryKey)) {
+              const success = await auth.unlockWithRecoveryKey(recoveryKey);
+              if (success) {
                 navigate('/dashboard');
               } else {
                 setError('恢复密钥无效');

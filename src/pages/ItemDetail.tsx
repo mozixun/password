@@ -36,9 +36,10 @@ import AppLayout from '@/components/AppLayout';
 import PasswordDisplay from '@/components/PasswordDisplay';
 import CopyButton from '@/components/CopyButton';
 import { useItems, useVaults, useGenerator, useProfile } from '@/store';
-import type { VaultItem, ItemType, PasswordHistoryEntry, TOTPConfig, Attachment } from '@/types';
+import type { VaultItem, ItemType, PasswordHistoryEntry, Attachment, TOTPConfig } from '@/types';
 import { cn } from '@/lib/utils';
 import { createPasskey, isPasskeySupported } from '@/utils/passkey';
+import { generateTOTP as generateRealTOTP, getRemainingSeconds } from '@/utils/totp';
 
 // ==================== 类型图标映射 ====================
 
@@ -96,16 +97,7 @@ function formatDate(isoString: string): string {
   });
 }
 
-// ==================== TOTP 生成（模拟） ====================
-
-/** 根据密钥生成模拟 TOTP 码 */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function generateTOTP(_secret: string): string {
-  // 模拟生成6位数字
-  const array = new Uint32Array(1);
-  crypto.getRandomValues(array);
-  return String(array[0] % 1000000).padStart(6, '0');
-}
+// ==================== TOTP 生成 ====================
 
 // ==================== 新建条目类型选择卡片 ====================
 
@@ -214,27 +206,37 @@ function EditField({
 // ==================== TOTP 倒计时组件 ====================
 
 function TOTPDisplay({ secret }: { secret: string }) {
-  const [code, setCode] = useState(() => generateTOTP(secret));
+  const [code, setCode] = useState('');
   const [remaining, setRemaining] = useState(30);
   const [refreshing, setRefreshing] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
-  // 每30秒刷新 TOTP 码
+  const refreshCode = useCallback(async () => {
+    try {
+      const newCode = await generateRealTOTP({
+        secret,
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
+        issuer: '',
+        account: '',
+      });
+      setCode(newCode);
+    } catch {
+      setCode('----');
+    }
+  }, [secret]);
+
   useEffect(() => {
-    const startTime = Date.now();
-    const initialRemaining = 30 - (Math.floor(startTime / 30000) % 1 ? 0 : 0);
-    setRemaining(initialRemaining);
+    refreshCode();
+    setRemaining(getRemainingSeconds(30));
 
     intervalRef.current = setInterval(() => {
-      const now = Date.now();
-      const secondsInPeriod = (now / 1000) % 30;
-      const newRemaining = Math.max(0, 30 - Math.floor(secondsInPeriod));
+      const newRemaining = getRemainingSeconds(30);
 
       setRemaining((prev) => {
-        // 当倒计时从1变为30时，说明新周期开始，刷新验证码
         if (prev <= 1 && newRemaining >= 29) {
-          const newCode = generateTOTP(secret);
-          setCode(newCode);
+          refreshCode();
           setRefreshing(true);
           setTimeout(() => setRefreshing(false), 500);
         }
@@ -245,15 +247,13 @@ function TOTPDisplay({ secret }: { secret: string }) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [secret]);
+  }, [secret, refreshCode]);
 
-  // 手动刷新
   const handleRefresh = useCallback(() => {
-    const newCode = generateTOTP(secret);
-    setCode(newCode);
+    refreshCode();
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 500);
-  }, [secret]);
+  }, [refreshCode]);
 
   // 倒计时圆环参数
   const radius = 18;
