@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Light 主题（默认） ===== */
+:root {
+  --vault-bg: 245 245 250;
+  --vault-surface: 255 255 255;
+  --vault-card: 255 255 255;
+  --vault-border: 209 217 230;
+  --vault-hover: 226 232 240;
+  --vault-glass: 255 255 255;
+  --vault-glass-border: 255 255 255;
+  --vault-accent: 124 58 237;
+  --vault-accent-hover: 139 92 246;
+  --vault-accent-dim: 109 40 217;
+  --vault-warn: 229 62 62;
+  --vault-warn-dim: 184 50 50;
+  --vault-orange: 221 136 0;
+  --vault-blue: 59 130 246;
+  --vault-purple: 124 58 237;
+  --vault-text: 26 32 44;
+  --vault-text-secondary: 74 85 104;
+  --vault-text-muted: 160 174 192;
+  --vault-success: 124 58 237;
+  --vault-error: 229 62 62;
+  --vault-scrollbar-thumb: 203 213 224;
+  --vault-scrollbar-thumb-hover: 160 174 192;
+  --vault-char-lower: 124 58 237;
+  --vault-char-upper: 59 130 246;
+  --vault-char-digit: 221 136 0;
+  --vault-char-symbol: 124 58 237;
+
+  font-family: 'DM Sans', 'SF Pro Text', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Dark 主题 ===== */
+.dark {
+  --vault-bg: 8 10 20;
+  --vault-surface: 20 25 45;
+  --vault-card: 25 30 55;
+  --vault-border: 30 58 95;
+  --vault-hover: 26 51 85;
+  --vault-glass: 30 35 60;
+  --vault-glass-border: 255 255 255;
+  --vault-accent: 167 139 250;
+  --vault-accent-hover: 196 181 253;
+  --vault-accent-dim: 139 92 246;
+  --vault-warn: 255 107 107;
+  --vault-warn-dim: 204 85 85;
+  --vault-orange: 255 159 67;
+  --vault-blue: 77 166 255;
+  --vault-purple: 167 139 250;
+  --vault-text: 248 249 252;
+  --vault-text-secondary: 139 157 195;
+  --vault-text-muted: 90 111 142;
+  --vault-success: 167 139 250;
+  --vault-error: 255 107 107;
+  --vault-scrollbar-thumb: 30 58 95;
+  --vault-scrollbar-thumb-hover: 42 79 127;
+  --vault-char-lower: 167 139 250;
+  --vault-char-upper: 77 166 255;
+  --vault-char-digit: 255 159 67;
+  --vault-char-symbol: 167 139 250;
+}
+
+body {
+  background-color: rgb(var(--vault-bg));
+  color: rgb(var(--vault-text));
+  overflow: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--vault-scrollbar-thumb));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--vault-scrollbar-thumb-hover));
+}
+
+/* Utility classes */
+@layer components {
+  .vault-card {
+    @apply bg-vault-card/60 backdrop-blur-xl border border-vault-border/50 rounded-2xl transition-all duration-300;
+  }
+
+  .vault-card:hover {
+    @apply border-vault-accent/30 shadow-xl shadow-vault-accent/10 -translate-y-1;
+  }
+
+  .vault-btn-primary {
+    @apply bg-gradient-to-r from-vault-accent to-vault-accent-dim text-vault-bg font-semibold rounded-xl px-4 py-2.5 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:shadow-vault-accent/40 hover:-translate-y-0.5 active:scale-[0.97];
+  }
+
+  .vault-btn-secondary {
+    @apply border border-vault-border/50 text-vault-text rounded-xl px-4 py-2.5 backdrop-blur-sm transition-all duration-300 hover:bg-vault-hover/50 hover:border-vault-accent/30;
+  }
+
+  .vault-input {
+    @apply bg-vault-surface/50 backdrop-blur-sm border border-vault-border/50 rounded-xl px-4 py-2.5 text-vault-text placeholder-vault-text-muted focus:outline-none focus:border-vault-accent focus:ring-2 focus:ring-vault-accent/20 transition-all duration-300;
+  }
+
+  .vault-badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-vault-text-secondary transition-all duration-300 cursor-pointer;
+  }
+
+  .sidebar-item:hover {
+    @apply bg-vault-hover/50 text-vault-text backdrop-blur-sm;
+  }
+
+  .sidebar-item.active {
+    @apply bg-vault-accent/15 text-vault-accent border border-vault-accent/20 font-medium backdrop-blur-sm;
+  }
+
+  .glass-panel {
+    @apply bg-vault-glass/10 backdrop-blur-2xl border border-vault-glass-border/20 rounded-2xl;
+  }
+
+  .glass-nav-item {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-vault-text-secondary transition-all duration-300 cursor-pointer hover:bg-vault-glass/10 backdrop-blur-sm;
+  }
+
+  .glass-nav-item.active {
+    @apply bg-vault-accent/15 text-vault-accent backdrop-blur-sm;
+  }
+}
+
+/* TOTP animation */
+@keyframes totp-pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+.totp-refreshing {
+  animation: totp-pulse 0.5s ease-in-out;
+}
+
+/* Password character colors */
+.char-lower { color: rgb(var(--vault-char-lower)); }
+.char-upper { color: rgb(var(--vault-char-upper)); }
+.char-digit { color: rgb(var(--vault-char-digit)); }
+.char-symbol { color: rgb(var(--vault-char-symbol)); }

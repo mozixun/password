@@ -1,0 +1,36 @@
+- [x] 主密码使用加盐哈希存储，不再使用纯 base64
+- [x] passkey 认证失败时返回 success: false
+- [x] 恢复密钥使用 crypto.getRandomValues 生成
+- [x] Login 注册功能调用 auth.register 方法
+- [x] Login 登录成功后跳转 /dashboard
+- [x] /unlock 路由未认证用户重定向到登录页
+- [x] Unlock 剩余尝试次数计算正确（不多减1）
+- [x] checkAutoLock 在 App 顶层被定时调用
+- [x] resetActivityTimer 绑定到用户活动事件
+- [x] runFullAudit 在 Watchtower 页 mount 时调用
+- [x] incrementUsage 在复制/查看 item 时调用
+- [x] toggleTravelMode 逻辑正确（启用隐藏、禁用显示）
+- [x] Settings 旅行模式显示逻辑正确
+- [x] Dashboard 跳转路径为 /items/detail/:id
+- [x] Items typeFilters 包含所有 ItemType
+- [x] Watchtower 过期判断仅使用 expiryDate
+- [x] Watchtower 所有"更新"按钮有 onClick
+- [x] ItemDetail 保存时校验 title 非空
+- [x] ItemDetail 保存时密码变化写入 passwordHistory
+- [x] ItemDetail 附件下载按钮有 onClick
+- [x] Generator 密码短语生成写入历史记录
+- [x] Generator Toggle label 点击可触发切换
+- [x] Settings "更新密码"按钮有 onClick
+- [x] Settings 设备"移除"按钮有 onClick
+- [x] Settings 无 `true ?` 三元恒真
+- [x] Sidebar 搜索栏为 input 可输入
+- [x] AppLayout "新建"按钮有 onClick
+- [x] AppLayout breadcrumb 动态生成
+- [x] Vaults "共享"/"归档"/"邀请成员"按钮有 onClick
+- [x] store checkBreach 不展开整个 state
+- [x] mock 数据 alert.itemId 与 item.title 匹配
+- [x] breachDetection 泄露检测逻辑正确
+- [x] totp.ts parseOTPUri slice 偏移正确
+- [x] Home 页面安全分数从 store 读取
+- [x] ItemCard 不使用非空断言
+- [x] npm run build 零错误通过

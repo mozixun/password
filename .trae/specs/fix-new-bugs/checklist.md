@@ -1,0 +1,9 @@
+- [x] ItemCard.tsx(140,39) TS2554 错误已修复
+- [x] `npm run build` 零错误通过
+- [x] ItemCard.tsx 无 ESLint 未使用变量错误
+- [x] Unlock.tsx useEffect 依赖警告已处理
+- [x] `npm run lint` src 目录无新增错误或警告
+- [x] api/app.ts 无 ESLint 未使用变量错误
+- [x] api/routes/auth.ts 无 ESLint 未使用参数错误
+- [x] vite.config.ts 无 ESLint 未使用参数错误
+- [x] `npm run lint` 全项目零错误零警告

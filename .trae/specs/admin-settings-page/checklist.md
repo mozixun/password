@@ -1,0 +1,11 @@
+- [x] AdminSettings 类型定义已添加到 types/index.ts
+- [x] store 中已添加 adminSettings 切片和操作方法
+- [x] AdminSettings 页面已创建并包含网站信息配置模块
+- [x] AdminSettings 页面已创建并包含域名配置模块
+- [x] /admin 路由已添加到 App.tsx
+- [x] Sidebar 中已添加管理员设置导航入口
+- [x] 网站信息配置表单支持编辑和保存
+- [x] 域名允许列表支持添加和删除
+- [x] 域名阻止列表支持添加和删除
+- [x] 自动填充规则支持精确/模糊匹配切换
+- [x] npm run build 零错误通过

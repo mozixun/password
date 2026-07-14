@@ -1,0 +1,7 @@
+- [x] App.tsx 路由顺序调整：`/items/detail/:id` 和 `/items/new` 在 `/items/:type` 之前
+- [x] ItemCard.tsx 导航路径改为 `/items/detail/${item.id}`
+- [x] Items.tsx 列表视图导航路径改为 `/items/detail/${item.id}`
+- [x] 点击项目卡片正确跳转到详情页
+- [x] 点击列表项正确跳转到详情页
+- [x] 类型筛选标签点击后仍正常导航到类型路径
+- [x] npm run build 零错误通过

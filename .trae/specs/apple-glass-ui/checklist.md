@@ -1,0 +1,14 @@
+- [x] Light 主题新增 `--vault-glass` 和 `--vault-glass-border` 变量
+- [x] Dark 主题新增 `--vault-glass` 和 `--vault-glass-border` 变量，微调 surface/card/bg
+- [x] tailwind.config.js colors.vault 注册 `glass` 和 `glass-border`
+- [x] `.vault-card` 使用 `backdrop-blur-xl` + `bg-vault-card/60` + `rounded-2xl`
+- [x] `.vault-btn-primary` 增加 `backdrop-blur-sm` 和 hover 光晕
+- [x] `.vault-input` 使用 `bg-vault-surface/50` + `backdrop-blur-sm`
+- [x] `.sidebar-item` 圆角改为 `rounded-xl`，active 态用 `bg-vault-accent/15 backdrop-blur-sm`
+- [x] 新增 `.glass-panel` 组件类
+- [x] 新增 `.glass-nav-item` 组件类
+- [x] AppLayout header 使用 `backdrop-blur-xl` + 渐变底线
+- [x] Sidebar aside 使用 `backdrop-blur-2xl` + `bg-vault-surface/60`
+- [x] Login 页移除 `gradient-mesh`，替换为紫色光晕 + 毛玻璃卡片
+- [x] 新增 `glass-expand`、`spring-bounce`、`glow-flow` 动画
+- [x] npm run build 零错误通过

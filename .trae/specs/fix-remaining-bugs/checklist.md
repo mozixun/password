@@ -1,0 +1,12 @@
+- [x] App.tsx 中定时调用 checkAutoLock（如每30秒）
+- [x] AppLayout.tsx 中用户活动事件绑定 resetActivityTimer
+- [x] 用户活动后 lastActivityTime 正确更新
+- [x] CopyButton.tsx 复制后调用 incrementUsage
+- [x] ItemCard.tsx 复制密码后调用 incrementUsage
+- [x] ItemDetail.tsx 打开时调用 incrementUsage
+- [x] store 中无空 catch 块（至少包含 console.warn）
+- [x] clipboard.ts 无未使用变量
+- [x] ItemDetail.tsx 无 console.error
+- [x] Watchtower.tsx 无 console.error
+- [x] `npm run build` 零错误通过
+- [x] `npm run lint` 零错误零警告通过

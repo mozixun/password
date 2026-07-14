@@ -1,0 +1,9 @@
+- [x] Light 主题 `:root` 中 accent 系列变量值为紫色（124 58 237）
+- [x] Dark 主题 `.dark` 中 accent 系列变量值为亮紫色（167 139 250）
+- [x] char-lower 和 success 变量同步更新为紫色
+- [x] pulseGlow 动画 boxShadow 使用紫色 rgba
+- [x] 新增 shimmer、scale-in、bounce-subtle 动画并注册
+- [x] 现有 fadeIn、slideUp 动画使用 cubic-bezier 缓动
+- [x] .vault-card:hover 包含上浮效果（-translate-y-0.5）
+- [x] .vault-btn-primary hover 阴影增强
+- [x] npm run build 零错误通过

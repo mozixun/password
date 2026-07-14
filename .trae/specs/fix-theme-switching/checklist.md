@@ -1,0 +1,7 @@
+- [x] CSS 变量定义了 light 和 dark 两套配色方案
+- [x] tailwind.config.js 的 vault 颜色通过 CSS 变量引用（RGB 通道格式 + alpha-value）
+- [x] 切换到浅色主题后页面背景为浅色、文字为深色
+- [x] 切换到深色主题后页面恢复当前默认深色外观
+- [x] 跟随系统模式根据 OS 偏好自动切换主题
+- [x] 页面刷新后主题保持不变（store 初始值 system + matchMedia）
+- [x] npm run build 零错误通过

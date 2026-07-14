@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 应用基本信息 -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>zh_CN</string>
+    <key>CFBundleDisplayName</key>
+    <string>VaultKey</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+
+    <!-- Face ID 使用说明（中文） -->
+    <key>NSFaceIDUsageDescription</key>
+    <string>VaultKey 使用 Face ID 来安全地解锁您的密码库，保护您的隐私数据</string>
+
+    <!-- Keychain 访问组 -->
+    <key>keychain-access-groups</key>
+    <array>
+        <string>$(AppIdentifierPrefix)com.vaultkey.app</string>
+        <string>$(AppIdentifierPrefix)com.vaultkey.app.autofill</string>
+    </array>
+
+    <!-- 支持的界面方向 -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+
+    <!-- 后台模式 -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+    </array>
+
+    <!-- 启动画面 -->
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+
+    <!-- 状态栏样式 -->
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <true/>
+
+    <!-- 网络安全配置 -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>api.vaultkey.app</key>
+            <dict>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSTemporaryExceptionRequiresForwardSecrecy</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+
+    <!-- 通知权限描述 -->
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>VaultKey 需要发送通知来提醒您安全更新和同步状态</string>
+
+    <!-- Siri 集成 -->
+    <key>NSAppleMusicUsageDescription</key>
+    <string>VaultKey 需要访问此功能以提供语音搜索密码服务</string>
+
+    <!-- App 组（用于主应用与 AutoFill 扩展共享数据） -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.vaultkey.app</string>
+    </array>
+</dict>
+</plist>
