@@ -312,3 +312,49 @@ export interface AdminSettings {
   siteInfo: SiteInfo;
   domainConfig: DomainConfig;
 }
+
+export interface EncryptedData {
+  version: number;
+  iv: string;
+  tag: string;
+  ciphertext: string;
+}
+
+export interface SecureKey {
+  raw: Uint8Array;
+  base32: string;
+}
+
+export interface VaultKey {
+  rootKey: Uint8Array;
+  srpKey: Uint8Array;
+}
+
+export interface EncryptedVaultItem {
+  id: string;
+  vaultId: string;
+  encryptedData: EncryptedData;
+  encryptedOverview: EncryptedData;
+  itemType: string;
+  tags: string[];
+  favorite: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  trashedAt?: string;
+}
+
+export interface LocalKeyStorage {
+  saltA: string;
+  saltB: string;
+  k1Hash: string;
+  secureKeyBase32: string;
+  deviceId: string;
+}
+
+export interface SRPCredentials {
+  email: string;
+  verifier: string;
+  salt: string;
+  publicKey: string;
+}

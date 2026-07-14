@@ -17,8 +17,23 @@ import type {
   AdminSettings,
   Attachment,
   ShareRecord,
+  VaultKey as VaultKeyType,
 } from '@/types';
 import { checkEmailBreaches, checkPasswordLeak, type BreachResult } from '@/utils/breachDetection';
+import {
+  generateSecureKey,
+  parseSecureKey,
+  generateSaltA,
+  generateSaltB,
+  deriveK1,
+  deriveVaultKey,
+  decryptAESGCM,
+  hashSHA256,
+  generateDeviceId,
+  bytesToBase64,
+  bytesToHex,
+  base64ToBytes,
+} from '@/utils/crypto';
 
 // ==================== 各切片状态接口定义 ====================
 
@@ -26,22 +41,27 @@ interface AuthState {
   isAuthenticated: boolean;
   isLocked: boolean;
   email: string;
-  masterPasswordHash: string;
+  saltA: string;
+  saltB: string;
+  k1Hash: string;
+  secureKeyBase32: string;
+  vaultKey: VaultKeyType | null;
   failedAttempts: number;
   lastActivityTime: number;
   trustedDeviceId: string | null;
-  login: (email: string, password: string, rememberDevice?: boolean) => void;
-  register: (email: string, password: string, rememberDevice?: boolean) => boolean;
+  login: (email: string, password: string, rememberDevice?: boolean) => Promise<void>;
+  register: (email: string, password: string, rememberDevice?: boolean) => Promise<{ success: boolean; secureKey?: string }>;
   logout: () => void;
   lock: () => void;
-  unlock: (password: string) => boolean;
-  unlockWithRecoveryKey: (recoveryKey: string) => boolean;
+  unlock: (password: string) => Promise<boolean>;
+  unlockWithRecoveryKey: (recoveryKey: string) => Promise<boolean>;
   setTrustedDevice: (deviceId: string) => void;
   clearTrustedDevice: () => void;
   checkTrustedDevice: () => boolean;
-  unlockWithTrustedDevice: () => boolean;
+  unlockWithTrustedDevice: () => Promise<boolean>;
   resetActivityTimer: () => void;
   checkAutoLock: () => void;
+  initLocalKeyStorage: () => Promise<void>;
 }
 
 interface VaultsState {
@@ -981,23 +1001,64 @@ const useStore = create<StoreState>()((set, get) => ({
     isAuthenticated: false,
     isLocked: true,
     email: '',
-    masterPasswordHash: '',
+    saltA: '',
+    saltB: '',
+    k1Hash: '',
+    secureKeyBase32: '',
+    vaultKey: null,
     failedAttempts: 0,
     lastActivityTime: Date.now(),
     trustedDeviceId: null,
 
-    login: (email: string, _password: string, rememberDevice = false) => {
-      const hash = btoa(btoa(_password) + 'vaultkey-salt');
+    initLocalKeyStorage: async () => {
+      try {
+        const storedKeyData = localStorage.getItem('vaultkey-local-keys');
+        if (storedKeyData) {
+          const keyData = JSON.parse(storedKeyData);
+          set((state) => ({
+            auth: {
+              ...state.auth,
+              saltA: keyData.saltA || '',
+              saltB: keyData.saltB || '',
+              k1Hash: keyData.k1Hash || '',
+              secureKeyBase32: keyData.secureKeyBase32 || '',
+              email: keyData.email || '',
+            },
+          }));
+        }
+      } catch (error) {
+        console.warn('Failed to init local key storage:', error);
+      }
+    },
+
+    login: async (email: string, password: string, rememberDevice = false) => {
       const now = Date.now();
       let deviceId: string | null = null;
 
+      const storedKeyData = localStorage.getItem('vaultkey-local-keys');
+      if (!storedKeyData) {
+        throw new Error('No local key data found');
+      }
+
+      const keyData = JSON.parse(storedKeyData);
+      const saltA = base64ToBytes(keyData.saltA);
+      const saltB = base64ToBytes(keyData.saltB);
+      const secureKey = parseSecureKey(keyData.secureKeyBase32);
+
+      const k1 = await deriveK1(password, saltA);
+      const computedK1Hash = await hashSHA256(bytesToHex(k1));
+
+      if (computedK1Hash !== keyData.k1Hash) {
+        throw new Error('Invalid password');
+      }
+
+      const vaultKey = await deriveVaultKey(k1, secureKey.raw, saltB);
+
       if (rememberDevice) {
-        deviceId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const encryptedToken = btoa(btoa(hash) + 'device-token-salt');
+        deviceId = generateDeviceId();
         const trustedDeviceData = {
           deviceId,
           email,
-          encryptedToken,
           createdAt: new Date().toISOString(),
           lastUsedAt: new Date().toISOString(),
         };
@@ -1015,7 +1076,11 @@ const useStore = create<StoreState>()((set, get) => ({
           isAuthenticated: true,
           isLocked: false,
           email,
-          masterPasswordHash: hash,
+          saltA: keyData.saltA,
+          saltB: keyData.saltB,
+          k1Hash: keyData.k1Hash,
+          secureKeyBase32: keyData.secureKeyBase32,
+          vaultKey,
           failedAttempts: 0,
           lastActivityTime: now,
           trustedDeviceId: deviceId,
@@ -1023,22 +1088,27 @@ const useStore = create<StoreState>()((set, get) => ({
       }));
     },
 
-    register: (email: string, password: string, rememberDevice = false) => {
+    register: async (email: string, password: string, rememberDevice = false) => {
       const existingEmail = get().profile.profile.email;
       if (email === existingEmail) {
-        return false;
+        return { success: false };
       }
-      const hash = btoa(btoa(password) + 'vaultkey-salt');
+
+      const secureKey = generateSecureKey();
+      const saltA = await generateSaltA(email);
+      const saltB = await generateSaltB();
+      const k1 = await deriveK1(password, saltA);
+      const k1Hash = await hashSHA256(bytesToHex(k1));
+      const vaultKey = await deriveVaultKey(k1, secureKey.raw, saltB);
+
       const now = Date.now();
       let deviceId: string | null = null;
 
       if (rememberDevice) {
-        deviceId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const encryptedToken = btoa(btoa(hash) + 'device-token-salt');
+        deviceId = generateDeviceId();
         const trustedDeviceData = {
           deviceId,
           email,
-          encryptedToken,
           createdAt: new Date().toISOString(),
           lastUsedAt: new Date().toISOString(),
         };
@@ -1050,19 +1120,38 @@ const useStore = create<StoreState>()((set, get) => ({
         }
       }
 
+      const localKeyData = {
+        saltA: bytesToBase64(saltA),
+        saltB: bytesToBase64(saltB),
+        k1Hash,
+        secureKeyBase32: secureKey.base32,
+        email,
+      };
+
+      try {
+        localStorage.setItem('vaultkey-local-keys', JSON.stringify(localKeyData));
+      } catch (error) {
+        console.warn('localStorage operation failed:', error);
+      }
+
       set((state) => ({
         auth: {
           ...state.auth,
           isAuthenticated: true,
           isLocked: false,
           email,
-          masterPasswordHash: hash,
+          saltA: localKeyData.saltA,
+          saltB: localKeyData.saltB,
+          k1Hash,
+          secureKeyBase32: secureKey.base32,
+          vaultKey,
           failedAttempts: 0,
           lastActivityTime: now,
           trustedDeviceId: deviceId,
         },
       }));
-      return true;
+
+      return { success: true, secureKey: secureKey.base32 };
     },
 
     logout: () => {
@@ -1077,7 +1166,11 @@ const useStore = create<StoreState>()((set, get) => ({
           isAuthenticated: false,
           isLocked: true,
           email: '',
-          masterPasswordHash: '',
+          saltA: '',
+          saltB: '',
+          k1Hash: '',
+          secureKeyBase32: '',
+          vaultKey: null,
           failedAttempts: 0,
           lastActivityTime: Date.now(),
           trustedDeviceId: null,
@@ -1087,7 +1180,7 @@ const useStore = create<StoreState>()((set, get) => ({
 
     lock: () => {
       set((state) => ({
-        auth: { ...state.auth, isLocked: true },
+        auth: { ...state.auth, isLocked: true, vaultKey: null },
       }));
     },
 
@@ -1112,7 +1205,7 @@ const useStore = create<StoreState>()((set, get) => ({
       try {
         const storedDevice = localStorage.getItem('vaultkey-trusted-device');
         if (storedDevice) {
-          const deviceData = JSON.parse(storedDevice) as { deviceId: string; email: string; encryptedToken: string };
+          const deviceData = JSON.parse(storedDevice) as { deviceId: string; email: string };
           const { auth } = get();
           if (auth.email && deviceData.email === auth.email) {
             set((state) => ({
@@ -1127,23 +1220,48 @@ const useStore = create<StoreState>()((set, get) => ({
       return false;
     },
 
-    unlockWithTrustedDevice: () => {
+    unlockWithTrustedDevice: async () => {
       try {
         const storedDevice = localStorage.getItem('vaultkey-trusted-device');
         if (storedDevice) {
-          const deviceData = JSON.parse(storedDevice) as { deviceId: string; email: string; encryptedToken: string };
+          const deviceData = JSON.parse(storedDevice) as { deviceId: string; email: string };
           const { auth } = get();
           if (auth.email && deviceData.email === auth.email) {
-            set((state) => ({
-              auth: {
-                ...state.auth,
-                isLocked: false,
-                failedAttempts: 0,
-                lastActivityTime: Date.now(),
-                trustedDeviceId: deviceData.deviceId,
-              },
-            }));
-            return true;
+            const storedKeyData = localStorage.getItem('vaultkey-local-keys');
+            if (!storedKeyData) {
+              return false;
+            }
+
+            const keyData = JSON.parse(storedKeyData);
+            const secureKey = parseSecureKey(keyData.secureKeyBase32);
+
+            const encryptedVaultKey = localStorage.getItem('vaultkey-encrypted-vault-key');
+            if (!encryptedVaultKey) {
+              return false;
+            }
+
+            const encryptedData = JSON.parse(encryptedVaultKey);
+            try {
+              const decrypted = await decryptAESGCM(encryptedData, secureKey.raw);
+              const vaultKey = JSON.parse(decrypted);
+
+              set((state) => ({
+                auth: {
+                  ...state.auth,
+                  isLocked: false,
+                  failedAttempts: 0,
+                  lastActivityTime: Date.now(),
+                  trustedDeviceId: deviceData.deviceId,
+                  vaultKey: {
+                    rootKey: base64ToBytes(vaultKey.rootKey),
+                    srpKey: base64ToBytes(vaultKey.srpKey),
+                  },
+                },
+              }));
+              return true;
+            } catch {
+              return false;
+            }
           }
         }
       } catch (error) {
@@ -1152,16 +1270,21 @@ const useStore = create<StoreState>()((set, get) => ({
       return false;
     },
 
-    unlock: (password: string) => {
-      const hash = btoa(btoa(password) + 'vaultkey-salt');
-      const isValid = hash === get().auth.masterPasswordHash;
+    unlock: async (password: string) => {
+      const { auth } = get();
       
-      if (isValid) {
-        set((state) => ({
-          auth: { ...state.auth, isLocked: false, failedAttempts: 0, lastActivityTime: Date.now() },
-        }));
-        return true;
-      } else {
+      if (!auth.saltA || !auth.saltB || !auth.k1Hash || !auth.secureKeyBase32) {
+        return false;
+      }
+
+      const saltA = base64ToBytes(auth.saltA);
+      const saltB = base64ToBytes(auth.saltB);
+      const secureKey = parseSecureKey(auth.secureKeyBase32);
+
+      const k1 = await deriveK1(password, saltA);
+      const computedK1Hash = await hashSHA256(bytesToHex(k1));
+
+      if (computedK1Hash !== auth.k1Hash) {
         set((state) => ({
           auth: {
             ...state.auth,
@@ -1171,22 +1294,53 @@ const useStore = create<StoreState>()((set, get) => ({
         }));
         return false;
       }
+
+      const vaultKey = await deriveVaultKey(k1, secureKey.raw, saltB);
+
+      set((state) => ({
+        auth: {
+          ...state.auth,
+          isLocked: false,
+          failedAttempts: 0,
+          lastActivityTime: Date.now(),
+          vaultKey,
+        },
+      }));
+      return true;
     },
 
-    unlockWithRecoveryKey: (recoveryKey: string) => {
-      const validRecoveryKey = 'VK-R3C0V-ERYK-EY20-24XX-ZZ9K';
-      if (recoveryKey.trim().toUpperCase() === validRecoveryKey) {
-        set((state) => ({
-          auth: {
-            ...state.auth,
-            isLocked: false,
-            failedAttempts: 0,
-            lastActivityTime: Date.now(),
-          },
-        }));
-        return true;
+    unlockWithRecoveryKey: async (recoveryKey: string) => {
+      const { auth } = get();
+      
+      const storedRecoveryKey = localStorage.getItem('vaultkey-recovery-key');
+      if (!storedRecoveryKey) {
+        return false;
       }
-      return false;
+
+      if (recoveryKey.trim().toUpperCase() !== storedRecoveryKey) {
+        return false;
+      }
+
+      if (!auth.saltA || !auth.saltB || !auth.secureKeyBase32) {
+        return false;
+      }
+
+      const saltB = base64ToBytes(auth.saltB);
+      const secureKey = parseSecureKey(auth.secureKeyBase32);
+
+      const recoveryK1 = await deriveK1(recoveryKey, base64ToBytes(auth.saltA));
+      const vaultKey = await deriveVaultKey(recoveryK1, secureKey.raw, saltB);
+
+      set((state) => ({
+        auth: {
+          ...state.auth,
+          isLocked: false,
+          failedAttempts: 0,
+          lastActivityTime: Date.now(),
+          vaultKey,
+        },
+      }));
+      return true;
     },
 
     resetActivityTimer: () => {
@@ -1207,7 +1361,7 @@ const useStore = create<StoreState>()((set, get) => ({
       
       if (elapsedMinutes >= autoLockMinutes) {
         set((state) => ({
-          auth: { ...state.auth, isLocked: true },
+          auth: { ...state.auth, isLocked: true, vaultKey: null },
         }));
       }
     },
