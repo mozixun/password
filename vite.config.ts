@@ -15,7 +15,7 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
-  base: '/vaultkey/',
+  base: '/',
   server: {
     proxy: {
       '/api': {
