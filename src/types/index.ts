@@ -310,6 +310,9 @@ export interface VaultSettings {
   clipboardClearSeconds: number;
   travelModeEnabled: boolean;
   hiddenVaultIds: string[];
+  allowedDomains: string[];
+  blockedDomains: string[];
+  matchMode: 'exact' | 'fuzzy';
 }
 
 export interface PasswordStrength {

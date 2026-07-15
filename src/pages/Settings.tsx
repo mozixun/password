@@ -22,6 +22,8 @@ import {
   Copy,
   Check,
   X,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { useStore, useUI } from '@/store';
@@ -102,6 +104,11 @@ export default function Settings() {
 
   // ====== 语言设置状态 ======
   const selectedLanguage = language;
+
+  // ====== 域名自动填充设置状态 ======
+  const [newAllowedDomain, setNewAllowedDomain] = useState('');
+  const [newBlockedDomain, setNewBlockedDomain] = useState('');
+  const [domainMessage, setDomainMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // 设备列表来自 store
   const devices = profile.devices;
@@ -215,6 +222,36 @@ export default function Settings() {
     URL.revokeObjectURL(url);
 
     setLastExportDate(new Date().toLocaleString('zh-CN'));
+  };
+
+  // 域名允许列表操作
+  const handleAddAllowedDomain = () => {
+    if (!newAllowedDomain.trim()) return;
+    settings.addAllowedDomain(newAllowedDomain.trim());
+    setNewAllowedDomain('');
+    setDomainMessage({ type: 'success', text: '域名已添加到允许列表' });
+    setTimeout(() => setDomainMessage(null), 2000);
+  };
+
+  const handleRemoveAllowedDomain = (domain: string) => {
+    settings.removeAllowedDomain(domain);
+    setDomainMessage({ type: 'success', text: '域名已从允许列表移除' });
+    setTimeout(() => setDomainMessage(null), 2000);
+  };
+
+  // 域名阻止列表操作
+  const handleAddBlockedDomain = () => {
+    if (!newBlockedDomain.trim()) return;
+    settings.addBlockedDomain(newBlockedDomain.trim());
+    setNewBlockedDomain('');
+    setDomainMessage({ type: 'success', text: '域名已添加到阻止列表' });
+    setTimeout(() => setDomainMessage(null), 2000);
+  };
+
+  const handleRemoveBlockedDomain = (domain: string) => {
+    settings.removeBlockedDomain(domain);
+    setDomainMessage({ type: 'success', text: '域名已从阻止列表移除' });
+    setTimeout(() => setDomainMessage(null), 2000);
   };
 
   // 渲染账户安全部分
@@ -839,6 +876,166 @@ export default function Settings() {
             <p className="text-sm text-vault-accent">{t.settings.travelModeEnabled}</p>
             <p className="text-xs text-vault-text-muted mt-1">
               已隐藏 {vaults.list.filter((v) => v.isHidden).length} 个保险库。如需恢复，请再次切换旅行模式。
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* 自动填充域名设置 */}
+      <div className="vault-card p-6">
+        <h3 className="text-lg font-semibold text-vault-text mb-4 flex items-center gap-2">
+          <Globe size={20} className="text-vault-accent" />
+          自动填充域名设置
+        </h3>
+
+        {/* 匹配模式 */}
+        <div className="mb-6">
+          <label className="block text-sm text-vault-text-secondary mb-2">匹配模式</label>
+          <div className="flex gap-2">
+            <button
+              className={cn(
+                'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                settings.settings.matchMode === 'exact'
+                  ? 'bg-vault-accent text-white'
+                  : 'bg-vault-surface text-vault-text-secondary border border-vault-border hover:border-vault-accent/30'
+              )}
+              onClick={() => {
+                settings.setMatchMode('exact');
+                setDomainMessage({ type: 'success', text: '匹配模式已切换为精确匹配' });
+                setTimeout(() => setDomainMessage(null), 2000);
+              }}
+            >
+              精确匹配
+            </button>
+            <button
+              className={cn(
+                'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                settings.settings.matchMode === 'fuzzy'
+                  ? 'bg-vault-accent text-white'
+                  : 'bg-vault-surface text-vault-text-secondary border border-vault-border hover:border-vault-accent/30'
+              )}
+              onClick={() => {
+                settings.setMatchMode('fuzzy');
+                setDomainMessage({ type: 'success', text: '匹配模式已切换为模糊匹配' });
+                setTimeout(() => setDomainMessage(null), 2000);
+              }}
+            >
+              模糊匹配
+            </button>
+          </div>
+          <p className="text-xs text-vault-text-muted mt-2">
+            {settings.settings.matchMode === 'exact' ? '仅匹配完全相同的域名' : '匹配包含域名的网站'}
+          </p>
+        </div>
+
+        {/* 域名允许列表 */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-sm text-vault-text-secondary">域名允许列表</label>
+            <span className="text-xs text-vault-text-muted">{settings.settings.allowedDomains.length} 个域名</span>
+          </div>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              value={newAllowedDomain}
+              onChange={(e) => setNewAllowedDomain(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleAddAllowedDomain();
+                }
+              }}
+              className="vault-input flex-1 max-w-md"
+              placeholder="输入域名，如 *.google.com"
+            />
+            <button
+              className="vault-btn-primary text-sm flex items-center gap-1"
+              onClick={handleAddAllowedDomain}
+            >
+              <Plus size={16} />
+              添加
+            </button>
+          </div>
+          <div className="space-y-2">
+            {settings.settings.allowedDomains.map((domain) => (
+              <div
+                key={domain}
+                className="flex items-center justify-between p-2 bg-vault-surface border border-vault-border rounded-lg"
+              >
+                <span className="text-sm text-vault-text">{domain}</span>
+                <button
+                  className="text-vault-warn hover:text-vault-warn/80 transition-colors"
+                  onClick={() => handleRemoveAllowedDomain(domain)}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+          {settings.settings.allowedDomains.length === 0 && (
+            <p className="text-xs text-vault-text-muted mt-2">暂无允许的域名，添加后将仅在这些域名上自动填充</p>
+          )}
+        </div>
+
+        {/* 域名阻止列表 */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-sm text-vault-text-secondary">域名阻止列表</label>
+            <span className="text-xs text-vault-text-muted">{settings.settings.blockedDomains.length} 个域名</span>
+          </div>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              value={newBlockedDomain}
+              onChange={(e) => setNewBlockedDomain(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleAddBlockedDomain();
+                }
+              }}
+              className="vault-input flex-1 max-w-md"
+              placeholder="输入域名，如 *.example.com"
+            />
+            <button
+              className="vault-btn-primary text-sm flex items-center gap-1"
+              onClick={handleAddBlockedDomain}
+            >
+              <Plus size={16} />
+              添加
+            </button>
+          </div>
+          <div className="space-y-2">
+            {settings.settings.blockedDomains.map((domain) => (
+              <div
+                key={domain}
+                className="flex items-center justify-between p-2 bg-vault-surface border border-vault-border rounded-lg"
+              >
+                <span className="text-sm text-vault-text">{domain}</span>
+                <button
+                  className="text-vault-warn hover:text-vault-warn/80 transition-colors"
+                  onClick={() => handleRemoveBlockedDomain(domain)}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+          {settings.settings.blockedDomains.length === 0 && (
+            <p className="text-xs text-vault-text-muted mt-2">暂无阻止的域名，添加后将在这些域名上禁止自动填充</p>
+          )}
+        </div>
+
+        {domainMessage && (
+          <div
+            className={cn(
+              'mt-4 flex items-center gap-2 p-3 rounded-lg',
+              domainMessage.type === 'success'
+                ? 'bg-vault-success/10 border border-vault-success/20'
+                : 'bg-vault-error/10 border border-vault-error/20'
+            )}
+          >
+            <Check size={16} className={domainMessage.type === 'success' ? 'text-vault-success' : 'text-vault-error'} />
+            <p className={cn('text-sm', domainMessage.type === 'success' ? 'text-vault-success' : 'text-vault-error')}>
+              {domainMessage.text}
             </p>
           </div>
         )}

@@ -177,6 +177,11 @@ interface SettingsState {
   toggleTravelMode: () => void;
   generateRecoveryKey: () => RecoveryKey;
   updateEmergencyAccess: (access: EmergencyAccess[]) => void;
+  addAllowedDomain: (domain: string) => void;
+  removeAllowedDomain: (domain: string) => void;
+  addBlockedDomain: (domain: string) => void;
+  removeBlockedDomain: (domain: string) => void;
+  setMatchMode: (mode: 'exact' | 'fuzzy') => void;
 }
 
 interface ProfileState {
@@ -847,6 +852,9 @@ const mockSettings: VaultSettings = {
   clipboardClearSeconds: 30,
   travelModeEnabled: false,
   hiddenVaultIds: [],
+  allowedDomains: ['*.google.com', '*.github.com', '*.microsoft.com'],
+  blockedDomains: ['*.malware.com', '*.phishing-site.com'],
+  matchMode: 'fuzzy',
 };
 
 // 模拟恢复密钥数据
@@ -2360,6 +2368,66 @@ const useStore = create<StoreState>()((set, get) => ({
     updateEmergencyAccess: (access: EmergencyAccess[]) => {
       set((state) => ({
         settings: { ...state.settings, emergencyAccess: access },
+      }));
+    },
+
+    addAllowedDomain: (domain: string) => {
+      set((state) => ({
+        settings: {
+          ...state.settings,
+          settings: {
+            ...state.settings.settings,
+            allowedDomains: [...state.settings.settings.allowedDomains, domain],
+          },
+        },
+      }));
+    },
+
+    removeAllowedDomain: (domain: string) => {
+      set((state) => ({
+        settings: {
+          ...state.settings,
+          settings: {
+            ...state.settings.settings,
+            allowedDomains: state.settings.settings.allowedDomains.filter((d) => d !== domain),
+          },
+        },
+      }));
+    },
+
+    addBlockedDomain: (domain: string) => {
+      set((state) => ({
+        settings: {
+          ...state.settings,
+          settings: {
+            ...state.settings.settings,
+            blockedDomains: [...state.settings.settings.blockedDomains, domain],
+          },
+        },
+      }));
+    },
+
+    removeBlockedDomain: (domain: string) => {
+      set((state) => ({
+        settings: {
+          ...state.settings,
+          settings: {
+            ...state.settings.settings,
+            blockedDomains: state.settings.settings.blockedDomains.filter((d) => d !== domain),
+          },
+        },
+      }));
+    },
+
+    setMatchMode: (mode: 'exact' | 'fuzzy') => {
+      set((state) => ({
+        settings: {
+          ...state.settings,
+          settings: {
+            ...state.settings.settings,
+            matchMode: mode,
+          },
+        },
       }));
     },
   },
