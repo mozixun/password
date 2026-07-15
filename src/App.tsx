@@ -13,6 +13,10 @@ const Authenticator = lazy(() => import("@/pages/Authenticator"));
 const Watchtower = lazy(() => import("@/pages/Watchtower"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Vaults = lazy(() => import("@/pages/Vaults"));
+const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+const AdminUsers = lazy(() => import("@/pages/AdminUsers"));
+const AdminLogs = lazy(() => import("@/pages/AdminLogs"));
 const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const DocsHome = lazy(() => import("@/pages/docs/DocsHome"));
@@ -59,6 +63,22 @@ function UnlockRoute() {
   const isAuthenticated = useStore((s) => s.auth.isAuthenticated);
   if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
   return <Unlock />;
+}
+
+function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
+  const isAdmin = localStorage.getItem('adminToken') !== null;
+  if (!isAdmin) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return <>{children}</>;
+}
+
+function AdminLoginRoute({ children }: { children: React.ReactNode }) {
+  const isAdmin = localStorage.getItem('adminToken') !== null;
+  if (isAdmin) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+  return <>{children}</>;
 }
 
 function Loading() {
@@ -202,11 +222,43 @@ export default function App() {
           }
         />
         <Route
-          path="/admin"
+          path="/admin/login"
           element={
-            <ProtectedRoute>
+            <AdminLoginRoute>
+              <AdminLogin />
+            </AdminLoginRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminProtectedRoute>
+              <AdminDashboard />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <AdminProtectedRoute>
+              <AdminUsers />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <AdminProtectedRoute>
               <AdminSettings />
-            </ProtectedRoute>
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/logs"
+          element={
+            <AdminProtectedRoute>
+              <AdminLogs />
+            </AdminProtectedRoute>
           }
         />
         <Route

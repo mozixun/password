@@ -9,7 +9,7 @@ import {
   Save,
   AlertCircle,
 } from 'lucide-react';
-import AppLayout from '@/components/AppLayout';
+import AdminLayout from './AdminLayout';
 import { useAdmin } from '@/store';
 import { cn } from '@/lib/utils';
 
@@ -69,70 +69,69 @@ export default function AdminSettings() {
   };
 
   return (
-    <AppLayout>
+    <AdminLayout>
       <div className="h-full animate-fade-in">
-        <h1 className="text-2xl font-bold text-vault-text mb-6">管理员设置</h1>
+        <h1 className="text-2xl font-bold text-white mb-6">系统设置</h1>
 
         {saveMessage && (
           <div
             className={cn(
               'flex items-center gap-2 p-4 rounded-lg mb-6',
               saveMessage.type === 'success'
-                ? 'bg-vault-success/10 border border-vault-success/20'
-                : 'bg-vault-error/10 border border-vault-error/20'
+                ? 'bg-green-500/10 border border-green-500/20'
+                : 'bg-red-500/10 border border-red-500/20'
             )}
           >
-            <Check size={18} className={saveMessage.type === 'success' ? 'text-vault-success' : 'text-vault-error'} />
-            <p className={cn('text-sm', saveMessage.type === 'success' ? 'text-vault-success' : 'text-vault-error')}>
+            <Check size={18} className={saveMessage.type === 'success' ? 'text-green-400' : 'text-red-400'} />
+            <p className={cn('text-sm', saveMessage.type === 'success' ? 'text-green-400' : 'text-red-400')}>
               {saveMessage.text}
             </p>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 网站信息配置 */}
-          <div className="vault-card p-6">
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-6">
               <Globe size={20} className="text-vault-accent" />
-              <h2 className="text-lg font-semibold text-vault-text">网站信息</h2>
+              <h2 className="text-lg font-semibold text-white">网站信息</h2>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-vault-text-secondary mb-1.5">网站名称</label>
+                <label className="block text-sm text-slate-400 mb-1.5">网站名称</label>
                 <input
                   type="text"
                   value={siteName}
                   onChange={(e) => setSiteName(e.target.value)}
-                  className="vault-input w-full"
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent transition-colors"
                   placeholder="输入网站名称"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-vault-text-secondary mb-1.5">Logo URL</label>
+                <label className="block text-sm text-slate-400 mb-1.5">Logo URL</label>
                 <input
                   type="url"
                   value={logoUrl}
                   onChange={(e) => setLogoUrl(e.target.value)}
-                  className="vault-input w-full"
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent transition-colors"
                   placeholder="https://example.com/logo.png"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-vault-text-secondary mb-1.5">网站描述</label>
+                <label className="block text-sm text-slate-400 mb-1.5">网站描述</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="vault-input w-full resize-none"
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent transition-colors resize-none"
                   rows={3}
                   placeholder="输入网站描述"
                 />
               </div>
 
               <button
-                className="vault-btn-primary text-sm flex items-center gap-1.5"
+                className="bg-vault-accent hover:bg-vault-accent-hover text-white font-medium rounded-xl px-4 py-2.5 flex items-center gap-1.5 transition-all"
                 onClick={handleSaveSiteInfo}
               >
                 <Save size={16} />
@@ -141,16 +140,14 @@ export default function AdminSettings() {
             </div>
           </div>
 
-          {/* 域名配置 */}
           <div className="space-y-6">
-            {/* 域名允许列表 */}
-            <div className="vault-card p-6">
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Shield size={20} className="text-vault-accent" />
-                <h2 className="text-lg font-semibold text-vault-text">域名允许列表</h2>
+                <h2 className="text-lg font-semibold text-white">域名允许列表</h2>
               </div>
 
-              <p className="text-xs text-vault-text-muted mb-4">
+              <p className="text-xs text-slate-500 mb-4">
                 在此列表中的域名将允许自动填充密码。支持通配符格式如 *.example.com
               </p>
 
@@ -159,12 +156,12 @@ export default function AdminSettings() {
                   type="text"
                   value={newAllowedDomain}
                   onChange={(e) => setNewAllowedDomain(e.target.value)}
-                  className="vault-input flex-1"
+                  className="flex-1 bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent transition-colors"
                   placeholder="添加域名"
                   onKeyDown={(e) => e.key === 'Enter' && handleAddAllowedDomain()}
                 />
                 <button
-                  className="vault-btn-secondary text-sm flex items-center gap-1"
+                  className="bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl px-4 py-2.5 flex items-center gap-1 transition-colors"
                   onClick={handleAddAllowedDomain}
                 >
                   <Plus size={16} />
@@ -176,11 +173,11 @@ export default function AdminSettings() {
                 {domainConfig.allowedDomains.map((domain) => (
                   <div
                     key={domain}
-                    className="flex items-center justify-between p-3 bg-vault-surface border border-vault-border rounded-lg"
+                    className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg"
                   >
-                    <span className="text-sm text-vault-text">{domain}</span>
+                    <span className="text-sm text-white">{domain}</span>
                     <button
-                      className="text-vault-warn hover:text-vault-warn/80 transition-colors p-1 hover:bg-vault-warn/10 rounded"
+                      className="text-red-400 hover:text-red-300 transition-colors p-1 hover:bg-red-500/10 rounded"
                       onClick={() => handleRemoveAllowedDomain(domain)}
                     >
                       <Trash2 size={14} />
@@ -190,14 +187,13 @@ export default function AdminSettings() {
               </div>
             </div>
 
-            {/* 域名阻止列表 */}
-            <div className="vault-card p-6">
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
               <div className="flex items-center gap-2 mb-4">
-                <AlertCircle size={20} className="text-vault-warn" />
-                <h2 className="text-lg font-semibold text-vault-text">域名阻止列表</h2>
+                <AlertCircle size={20} className="text-yellow-400" />
+                <h2 className="text-lg font-semibold text-white">域名阻止列表</h2>
               </div>
 
-              <p className="text-xs text-vault-text-muted mb-4">
+              <p className="text-xs text-slate-500 mb-4">
                 在此列表中的域名将被阻止自动填充密码，提高安全性
               </p>
 
@@ -206,12 +202,12 @@ export default function AdminSettings() {
                   type="text"
                   value={newBlockedDomain}
                   onChange={(e) => setNewBlockedDomain(e.target.value)}
-                  className="vault-input flex-1"
+                  className="flex-1 bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent transition-colors"
                   placeholder="添加域名"
                   onKeyDown={(e) => e.key === 'Enter' && handleAddBlockedDomain()}
                 />
                 <button
-                  className="vault-btn-secondary text-sm flex items-center gap-1"
+                  className="bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl px-4 py-2.5 flex items-center gap-1 transition-colors"
                   onClick={handleAddBlockedDomain}
                 >
                   <Plus size={16} />
@@ -223,11 +219,11 @@ export default function AdminSettings() {
                 {domainConfig.blockedDomains.map((domain) => (
                   <div
                     key={domain}
-                    className="flex items-center justify-between p-3 bg-vault-surface border border-vault-border rounded-lg"
+                    className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg"
                   >
-                    <span className="text-sm text-vault-text">{domain}</span>
+                    <span className="text-sm text-white">{domain}</span>
                     <button
-                      className="text-vault-warn hover:text-vault-warn/80 transition-colors p-1 hover:bg-vault-warn/10 rounded"
+                      className="text-red-400 hover:text-red-300 transition-colors p-1 hover:bg-red-500/10 rounded"
                       onClick={() => handleRemoveBlockedDomain(domain)}
                     >
                       <Trash2 size={14} />
@@ -237,14 +233,13 @@ export default function AdminSettings() {
               </div>
             </div>
 
-            {/* 自动填充匹配规则 */}
-            <div className="vault-card p-6">
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
               <div className="flex items-center gap-2 mb-4">
                 <RefreshCw size={20} className="text-vault-accent" />
-                <h2 className="text-lg font-semibold text-vault-text">自动填充匹配规则</h2>
+                <h2 className="text-lg font-semibold text-white">自动填充匹配规则</h2>
               </div>
 
-              <p className="text-xs text-vault-text-muted mb-4">
+              <p className="text-xs text-slate-500 mb-4">
                 设置自动填充时域名匹配的方式
               </p>
 
@@ -254,17 +249,17 @@ export default function AdminSettings() {
                     'p-4 rounded-xl border-2 transition-all duration-200 text-left',
                     matchMode === 'exact'
                       ? 'border-vault-accent bg-vault-accent/5'
-                      : 'border-vault-border bg-vault-surface hover:border-vault-accent/30'
+                      : 'border-slate-600 bg-slate-700/30 hover:border-vault-accent/30'
                   )}
                   onClick={() => handleSetMatchMode('exact')}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-vault-text">精确匹配</span>
+                    <span className="text-sm font-medium text-white">精确匹配</span>
                     {matchMode === 'exact' && (
                       <Check size={16} className="text-vault-accent" />
                     )}
                   </div>
-                  <p className="text-xs text-vault-text-muted">
+                  <p className="text-xs text-slate-500">
                     仅当域名完全匹配时才自动填充
                   </p>
                 </button>
@@ -274,17 +269,17 @@ export default function AdminSettings() {
                     'p-4 rounded-xl border-2 transition-all duration-200 text-left',
                     matchMode === 'fuzzy'
                       ? 'border-vault-accent bg-vault-accent/5'
-                      : 'border-vault-border bg-vault-surface hover:border-vault-accent/30'
+                      : 'border-slate-600 bg-slate-700/30 hover:border-vault-accent/30'
                   )}
                   onClick={() => handleSetMatchMode('fuzzy')}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-vault-text">模糊匹配</span>
+                    <span className="text-sm font-medium text-white">模糊匹配</span>
                     {matchMode === 'fuzzy' && (
                       <Check size={16} className="text-vault-accent" />
                     )}
                   </div>
-                  <p className="text-xs text-vault-text-muted">
+                  <p className="text-xs text-slate-500">
                     域名包含匹配时即自动填充（更便捷）
                   </p>
                 </button>
@@ -293,6 +288,6 @@ export default function AdminSettings() {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </AdminLayout>
   );
 }

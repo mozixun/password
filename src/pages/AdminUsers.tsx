@@ -1,0 +1,286 @@
+import { useState } from 'react';
+import { Search, Plus, Edit, Trash2, Mail, Shield, Calendar, Lock, Check, X } from 'lucide-react';
+import AdminLayout from './AdminLayout';
+import { cn } from '@/lib/utils';
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user';
+  status: 'active' | 'inactive' | 'pending';
+  createdAt: string;
+  lastLogin: string;
+  vaultCount: number;
+  twoFactorEnabled: boolean;
+}
+
+export default function AdminUsers() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const [users] = useState<User[]>([
+    { id: '1', email: 'admin@vaultkey.com', name: '系统管理员', role: 'admin', status: 'active', createdAt: '2024-01-01', lastLogin: '2025-07-15 10:30', vaultCount: 3, twoFactorEnabled: true },
+    { id: '2', email: 'zhangsan@example.com', name: '张三', role: 'user', status: 'active', createdAt: '2024-03-15', lastLogin: '2025-07-15 09:15', vaultCount: 2, twoFactorEnabled: true },
+    { id: '3', email: 'lisi@example.com', name: '李四', role: 'user', status: 'active', createdAt: '2024-05-20', lastLogin: '2025-07-14 16:45', vaultCount: 1, twoFactorEnabled: false },
+    { id: '4', email: 'wangwu@example.com', name: '王五', role: 'user', status: 'inactive', createdAt: '2024-06-10', lastLogin: '2025-06-20 11:00', vaultCount: 1, twoFactorEnabled: false },
+    { id: '5', email: 'chenliu@example.com', name: '陈六', role: 'user', status: 'pending', createdAt: '2025-07-14', lastLogin: '-', vaultCount: 0, twoFactorEnabled: false },
+  ]);
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch = user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  const handleDelete = (userId: string) => {
+    if (confirm('确定要删除该用户吗？')) {
+      console.log('Delete user:', userId);
+    }
+  };
+
+  const handleEdit = (user: User) => {
+    setSelectedUser(user);
+    setShowEditModal(true);
+  };
+
+  const statusColors = {
+    active: 'bg-green-500',
+    inactive: 'bg-slate-500',
+    pending: 'bg-yellow-500',
+  };
+
+  const statusLabels = {
+    active: '活跃',
+    inactive: '停用',
+    pending: '待审核',
+  };
+
+  return (
+    <AdminLayout>
+      <div className="h-full animate-fade-in">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white">用户管理</h1>
+            <p className="text-slate-400 text-sm mt-1">管理系统用户和权限</p>
+          </div>
+          <button
+            className="bg-vault-accent hover:bg-vault-accent-hover text-white font-medium rounded-xl px-4 py-2 flex items-center gap-2 transition-all"
+            onClick={() => setShowAddModal(true)}
+          >
+            <Plus size={16} />
+            添加用户
+          </button>
+        </div>
+
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl">
+          <div className="p-4 border-b border-slate-700/50 flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索用户邮箱或姓名..."
+                className="w-full bg-slate-700/50 border border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent transition-colors"
+              />
+            </div>
+            <div className="flex gap-3">
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent transition-colors"
+              >
+                <option value="all">全部角色</option>
+                <option value="admin">管理员</option>
+                <option value="user">普通用户</option>
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent transition-colors"
+              >
+                <option value="all">全部状态</option>
+                <option value="active">活跃</option>
+                <option value="inactive">停用</option>
+                <option value="pending">待审核</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-700/50">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">用户信息</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">角色</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">状态</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">保险库</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">2FA</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">创建时间</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/30">
+                {filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-slate-700/20 transition-colors">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-vault-accent/20 flex items-center justify-center">
+                          <span className="text-vault-accent text-xs font-semibold">
+                            {user.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm text-white font-medium">{user.name}</p>
+                          <p className="text-xs text-slate-500 flex items-center gap-1">
+                            <Mail size={12} />
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={cn(
+                        'px-2.5 py-1 rounded-lg text-xs font-medium',
+                        user.role === 'admin'
+                          ? 'bg-vault-accent/10 text-vault-accent'
+                          : 'bg-slate-700 text-slate-300'
+                      )}>
+                        {user.role === 'admin' ? '管理员' : '用户'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className={cn('w-2 h-2 rounded-full', statusColors[user.status])} />
+                        <span className="text-sm text-slate-300">{statusLabels[user.status]}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-sm text-slate-300">{user.vaultCount}</span>
+                    </td>
+                    <td className="px-4 py-4">
+                      {user.twoFactorEnabled ? (
+                        <div className="flex items-center gap-1.5 text-green-400">
+                          <Check size={14} />
+                          <span className="text-xs">已启用</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-slate-500">
+                          <X size={14} />
+                          <span className="text-xs">未启用</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-xs text-slate-500">{user.createdAt}</span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEdit(user)}
+                          className="p-2 rounded-lg text-slate-400 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
+                          title="编辑"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        {user.role !== 'admin' && (
+                          <button
+                            onClick={() => handleDelete(user.id)}
+                            className="p-2 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                            title="删除"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredUsers.length === 0 && (
+            <div className="py-12 text-center">
+              <Search size={48} className="mx-auto text-slate-600 mb-4" />
+              <p className="text-slate-400">未找到匹配的用户</p>
+            </div>
+          )}
+        </div>
+
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold text-white mb-4">添加新用户</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">邮箱地址</label>
+                  <input type="email" className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent" placeholder="user@example.com" />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">姓名</label>
+                  <input type="text" className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent" placeholder="用户名" />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">角色</label>
+                  <select className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent">
+                    <option value="user">普通用户</option>
+                    <option value="admin">管理员</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl py-2.5 transition-colors" onClick={() => setShowAddModal(false)}>取消</button>
+                <button className="flex-1 bg-vault-accent hover:bg-vault-accent-hover text-white font-medium rounded-xl py-2.5 transition-colors">创建用户</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEditModal && selectedUser && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold text-white mb-4">编辑用户</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">邮箱地址</label>
+                  <input type="email" defaultValue={selectedUser.email} className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent" />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">姓名</label>
+                  <input type="text" defaultValue={selectedUser.name} className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent" />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">角色</label>
+                  <select defaultValue={selectedUser.role} className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent">
+                    <option value="user">普通用户</option>
+                    <option value="admin">管理员</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">状态</label>
+                  <select defaultValue={selectedUser.status} className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent">
+                    <option value="active">活跃</option>
+                    <option value="inactive">停用</option>
+                    <option value="pending">待审核</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl py-2.5 transition-colors" onClick={() => setShowEditModal(false)}>取消</button>
+                <button className="flex-1 bg-vault-accent hover:bg-vault-accent-hover text-white font-medium rounded-xl py-2.5 transition-colors">保存更改</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </AdminLayout>
+  );
+}

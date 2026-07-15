@@ -60,7 +60,6 @@ export default function Sidebar() {
 
   const bottomNavItems: NavItem[] = [
     { path: '/vaults', labelKey: 'vaults', icon: <FolderOpen size={18} /> },
-    { path: '/admin', labelKey: 'admin', icon: <Shield size={18} /> },
     { path: '/settings', labelKey: 'settings', icon: <Settings size={18} /> },
   ];
 
