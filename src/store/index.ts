@@ -192,11 +192,6 @@ interface ProfileState {
 interface AdminState {
   settings: AdminSettings;
   updateSiteInfo: (updates: Partial<AdminSettings['siteInfo']>) => void;
-  addAllowedDomain: (domain: string) => void;
-  removeAllowedDomain: (domain: string) => void;
-  addBlockedDomain: (domain: string) => void;
-  removeBlockedDomain: (domain: string) => void;
-  setMatchMode: (mode: 'exact' | 'fuzzy') => void;
   generateRedeemCode: (planType: string, expiresAtDate: string, totalUses: number, subscriptionDays: number, customCode?: string) => RedeemCode;
   toggleRedeemCode: (id: string) => void;
   deleteRedeemCode: (id: string) => void;
@@ -832,7 +827,7 @@ const mockDevices: Device[] = [
 const mockSubscription: Subscription = {
   plan: 'premium',
   startAt: '2024-01-15T08:00:00Z',
-  expiresAt: '2025-08-15T08:00:00Z',
+  expiresAt: '2027-08-15T08:00:00Z',
   source: 'direct',
 };
 
@@ -886,11 +881,6 @@ const mockAdminSettings: AdminSettings = {
     logoUrl: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=modern%20security%20vault%20icon%20with%20shield%20and%20key%20blue%20gradient%20minimal%20design&image_size=square',
     description: '企业级密码管理解决方案，端到端加密，多平台支持',
   },
-  domainConfig: {
-    allowedDomains: ['*.google.com', '*.github.com', '*.microsoft.com'],
-    blockedDomains: ['*.malware.com', '*.phishing-site.com'],
-    matchMode: 'fuzzy',
-  },
   notificationConfig: {
     smtpHost: 'smtp.example.com',
     smtpPort: 587,
@@ -905,7 +895,7 @@ const mockAdminSettings: AdminSettings = {
       planType: 'premium',
       totalUses: 10,
       usedCount: 3,
-      expiresAt: '2025-12-31T23:59:59Z',
+      expiresAt: '2027-12-31T23:59:59Z',
       enabled: true,
       createdAt: '2024-01-01T00:00:00Z',
       subscriptionDays: 365,
@@ -916,7 +906,7 @@ const mockAdminSettings: AdminSettings = {
       planType: 'family',
       totalUses: 5,
       usedCount: 5,
-      expiresAt: '2025-06-01T00:00:00Z',
+      expiresAt: '2027-06-01T00:00:00Z',
       enabled: true,
       createdAt: '2024-01-01T00:00:00Z',
       subscriptionDays: 365,
@@ -2456,81 +2446,6 @@ const useStore = create<StoreState>()((set, get) => ({
       }));
     },
 
-    addAllowedDomain: (domain) => {
-      set((state) => ({
-        admin: {
-          ...state.admin,
-          settings: {
-            ...state.admin.settings,
-            domainConfig: {
-              ...state.admin.settings.domainConfig,
-              allowedDomains: [...state.admin.settings.domainConfig.allowedDomains, domain],
-            },
-          },
-        },
-      }));
-    },
-
-    removeAllowedDomain: (domain) => {
-      set((state) => ({
-        admin: {
-          ...state.admin,
-          settings: {
-            ...state.admin.settings,
-            domainConfig: {
-              ...state.admin.settings.domainConfig,
-              allowedDomains: state.admin.settings.domainConfig.allowedDomains.filter((d) => d !== domain),
-            },
-          },
-        },
-      }));
-    },
-
-    addBlockedDomain: (domain) => {
-      set((state) => ({
-        admin: {
-          ...state.admin,
-          settings: {
-            ...state.admin.settings,
-            domainConfig: {
-              ...state.admin.settings.domainConfig,
-              blockedDomains: [...state.admin.settings.domainConfig.blockedDomains, domain],
-            },
-          },
-        },
-      }));
-    },
-
-    removeBlockedDomain: (domain) => {
-      set((state) => ({
-        admin: {
-          ...state.admin,
-          settings: {
-            ...state.admin.settings,
-            domainConfig: {
-              ...state.admin.settings.domainConfig,
-              blockedDomains: state.admin.settings.domainConfig.blockedDomains.filter((d) => d !== domain),
-            },
-          },
-        },
-      }));
-    },
-
-    setMatchMode: (mode) => {
-      set((state) => ({
-        admin: {
-          ...state.admin,
-          settings: {
-            ...state.admin.settings,
-            domainConfig: {
-              ...state.admin.settings.domainConfig,
-              matchMode: mode,
-            },
-          },
-        },
-      }));
-    },
-
     generateRedeemCode: (planType, expiresAtDate, totalUses, subscriptionDays, customCode) => {
       const now = new Date();
       // expiresAtDate 是 YYYY-MM-DD 格式，设置为当天 23:59:59
@@ -2682,8 +2597,8 @@ const useStore = create<StoreState>()((set, get) => ({
     subscription: mockSubscription,
 
     applyRedeemCode: (code) => {
-      const state = get();
-      const redeemCode = state.admin.settings.redeemCodes.find(
+      const currentRedeemCodes = get().admin.settings.redeemCodes;
+      const redeemCode = currentRedeemCodes.find(
         (rc) => rc.code.toUpperCase() === code.trim().toUpperCase()
       );
 
@@ -2705,13 +2620,13 @@ const useStore = create<StoreState>()((set, get) => ({
       }
 
       // 更新兑换码使用次数
-      const updatedRedeemCodes = state.admin.settings.redeemCodes.map((rc) =>
+      const updatedRedeemCodes = currentRedeemCodes.map((rc) =>
         rc.id === redeemCode.id ? { ...rc, usedCount: rc.usedCount + 1 } : rc
       );
 
       // 更新用户订阅，使用兑换码的 subscriptionDays
-      const subscriptionMs = (redeemCode.subscriptionDays || 30) * 24 * 60 * 60 * 1000;
-      const expiresAt = new Date(now.getTime() + subscriptionMs).toISOString();
+      const subscriptionDays = redeemCode.subscriptionDays || 30;
+      const expiresAt = new Date(now.getTime() + subscriptionDays * 24 * 60 * 60 * 1000).toISOString();
       const newSubscription: Subscription = {
         plan: redeemCode.planType,
         startAt: now.toISOString(),
@@ -2742,7 +2657,7 @@ const useStore = create<StoreState>()((set, get) => ({
         },
       }));
 
-      return { success: true, message: `兑换成功！已升级至 ${redeemCode.planType} 计划，有效期 ${redeemCode.subscriptionDays} 天` };
+      return { success: true, message: `兑换成功！已升级至 ${redeemCode.planType} 计划，有效期 ${subscriptionDays} 天` };
     },
   },
 }));

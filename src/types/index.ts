@@ -353,7 +353,6 @@ export interface TrustedDevice {
 
 export interface AdminSettings {
   siteInfo: SiteInfo;
-  domainConfig: DomainConfig;
   notificationConfig: NotificationSettings;
   redeemCodes: RedeemCode[];
 }
