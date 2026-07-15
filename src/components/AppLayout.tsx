@@ -1,18 +1,56 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Bell, Plus } from 'lucide-react';
+import { Menu, Bell, Plus, Search } from 'lucide-react';
 import { useStore } from '@/store';
 import Sidebar from './Sidebar';
+import CommandPalette from './CommandPalette';
+import { createBackup, saveBackup } from '@/utils/backup';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
+const AUTO_BACKUP_INTERVAL = 30 * 60 * 1000; // 30 分钟
+
 export default function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const resetActivityTimer = useStore((state) => state.auth.resetActivityTimer);
+  const itemsList = useStore((state) => state.items.list);
+  const vaultsList = useStore((state) => state.vaults.list);
+  const lastBackupRef = useRef<number>(Date.now());
+
+  // 全局快捷键
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd+K 打开命令面板
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+      // Ctrl/Cmd+N 新建条目
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        navigate('/items/new');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
+  // 自动备份定时器
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (itemsList.length > 0 && Date.now() - lastBackupRef.current >= AUTO_BACKUP_INTERVAL) {
+        const snapshot = createBackup(itemsList, vaultsList, []);
+        saveBackup(snapshot);
+        lastBackupRef.current = Date.now();
+      }
+    }, AUTO_BACKUP_INTERVAL);
+    return () => clearInterval(timer);
+  }, [itemsList, vaultsList]);
 
   // 活动计时器：监听用户活动并重置自动锁定计时器
   useEffect(() => {
@@ -89,6 +127,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
           {/* 右侧操作按钮 */}
           <div className="ml-auto flex items-center gap-2">
+            {/* 快速搜索按钮 */}
+            <button
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-vault-text-muted bg-vault-hover/50 hover:bg-vault-hover transition-colors"
+              onClick={() => setCommandPaletteOpen(true)}
+              title="快速搜索 (Ctrl+K)"
+            >
+              <Search size={16} />
+              <span className="hidden sm:inline">搜索...</span>
+              <kbd className="hidden md:flex items-center px-1.5 py-0.5 text-xs bg-vault-surface border border-vault-border rounded">
+                ⌘K
+              </kbd>
+            </button>
+
             {/* 通知 */}
             <button
               className="p-2 rounded-lg text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors relative"
@@ -114,6 +165,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* 命令面板 */}
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+      />
     </div>
   );
 }

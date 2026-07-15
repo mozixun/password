@@ -36,7 +36,7 @@ import AppLayout from '@/components/AppLayout';
 import PasswordDisplay from '@/components/PasswordDisplay';
 import CopyButton from '@/components/CopyButton';
 import { useItems, useVaults, useGenerator, useProfile } from '@/store';
-import type { VaultItem, ItemType, PasswordHistoryEntry, Attachment, TOTPConfig } from '@/types';
+import type { VaultItem, ItemType, PasswordHistoryEntry, Attachment, TOTPConfig, CustomField } from '@/types';
 import { cn } from '@/lib/utils';
 import { createPasskey, isPasskeySupported } from '@/utils/passkey';
 import { generateTOTP as generateRealTOTP, getRemainingSeconds } from '@/utils/totp';
@@ -583,6 +583,31 @@ export default function ItemDetail() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
+  // 自定义字段管理
+  const handleAddCustomField = useCallback(() => {
+    const newField: CustomField = {
+      id: `cf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      label: '',
+      type: 'text',
+      value: '',
+    };
+    updateField('customFields', [...(formData.customFields || []), newField]);
+  }, [formData.customFields, updateField]);
+
+  const handleUpdateCustomField = useCallback((id: string, updates: Partial<CustomField>) => {
+    updateField(
+      'customFields',
+      (formData.customFields || []).map((f) => (f.id === id ? { ...f, ...updates } : f)),
+    );
+  }, [formData.customFields, updateField]);
+
+  const handleRemoveCustomField = useCallback((id: string) => {
+    updateField(
+      'customFields',
+      (formData.customFields || []).filter((f) => f.id !== id),
+    );
+  }, [formData.customFields, updateField]);
+
   // 保存操作
   const handleSave = useCallback(() => {
     if (!formData.title?.trim()) {
@@ -606,6 +631,7 @@ export default function ItemDetail() {
         title: formData.title,
         tags: formData.tags,
         notes: formData.notes,
+        customFields: formData.customFields,
         ...getTypeSpecificFields(formData),
       });
       setIsEditing(false);
@@ -2179,6 +2205,99 @@ export default function ItemDetail() {
             </div>
           )}
         </div>
+
+        {/* ==================== 自定义字段区域 ==================== */}
+        {(isEditing || (currentItem?.customFields && currentItem.customFields.length > 0)) && (
+          <div className="vault-card p-6 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-vault-text">
+                自定义字段 {currentItem?.customFields && currentItem.customFields.length > 0 ? `(${currentItem.customFields.length})` : ''}
+              </h3>
+              {isEditing && (
+                <button
+                  onClick={handleAddCustomField}
+                  className="flex items-center gap-1 text-xs text-vault-accent hover:text-vault-accent/80 transition-colors"
+                >
+                  <Plus size={14} />
+                  添加字段
+                </button>
+              )}
+            </div>
+
+            {/* 自定义字段列表 */}
+            <div className="space-y-3">
+              {(isEditing ? formData.customFields : currentItem?.customFields)?.map((field) => (
+                <div key={field.id} className="flex items-start gap-3">
+                  {isEditing ? (
+                    <>
+                      {/* 字段名称 */}
+                      <input
+                        type="text"
+                        value={field.label}
+                        onChange={(e) => handleUpdateCustomField(field.id, { label: e.target.value })}
+                        placeholder="字段名称"
+                        className="w-32 vault-input text-xs py-1.5 shrink-0"
+                      />
+                      {/* 字段类型 */}
+                      <select
+                        value={field.type}
+                        onChange={(e) => handleUpdateCustomField(field.id, { type: e.target.value as CustomField['type'], value: '' })}
+                        className="w-28 vault-input text-xs py-1.5 shrink-0"
+                      >
+                        <option value="text">文本</option>
+                        <option value="password">密码</option>
+                        <option value="date">日期</option>
+                        <option value="private_note">私密备注</option>
+                      </select>
+                      {/* 字段值 */}
+                      <input
+                        type={field.type === 'password' ? 'password' : field.type === 'date' ? 'date' : 'text'}
+                        value={typeof field.value === 'string' ? field.value : ''}
+                        onChange={(e) => handleUpdateCustomField(field.id, { value: e.target.value })}
+                        placeholder="字段值"
+                        className="flex-1 vault-input text-xs py-1.5 min-w-0"
+                      />
+                      {/* 删除按钮 */}
+                      <button
+                        onClick={() => handleRemoveCustomField(field.id)}
+                        className="p-1.5 rounded-lg text-vault-text-muted hover:text-vault-warn hover:bg-vault-warn/10 transition-colors shrink-0"
+                      >
+                        <X size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {/* 查看模式 */}
+                      <div className="w-32 shrink-0">
+                        <span className="text-xs text-vault-text-muted">{field.label}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {field.type === 'password' ? (
+                          <PasswordDisplay password={typeof field.value === 'string' ? field.value : ''} />
+                        ) : field.type === 'private_note' ? (
+                          <span className="text-xs text-vault-text-muted italic">私密字段</span>
+                        ) : (
+                          <span className="text-sm text-vault-text break-all">
+                            {typeof field.value === 'string' ? field.value : ''}
+                          </span>
+                        )}
+                      </div>
+                      {field.type !== 'password' && field.type !== 'private_note' && typeof field.value === 'string' && field.value && (
+                        <CopyButton value={field.value} className="shrink-0" />
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+              {(!currentItem?.customFields || currentItem.customFields.length === 0) && !isEditing && (
+                <span className="text-xs text-vault-text-muted">暂无自定义字段</span>
+              )}
+              {isEditing && (!formData.customFields || formData.customFields.length === 0) && (
+                <span className="text-xs text-vault-text-muted">点击"添加字段"创建自定义字段</span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ==================== 附件区域 ==================== */}
         {(isEditing || !!(currentItem?.attachments && currentItem.attachments.length > 0)) && (

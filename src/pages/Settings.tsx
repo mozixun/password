@@ -1,5 +1,5 @@
 // VaultKey 密码管理器 - 设置页面
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Shield,
   Palette,
@@ -24,6 +24,9 @@ import {
   X,
   Plus,
   Trash2,
+  HardDriveDownload,
+  RotateCcw,
+  History,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { useStore, useUI } from '@/store';
@@ -32,10 +35,20 @@ import { getLanguageName } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { persistClipboardSettings } from '@/utils/clipboard';
 import { importData, exportToCSV, exportToJSON, exportTo1PasswordCSV } from '@/utils/importExport';
+import {
+  createBackup,
+  getBackups,
+  saveBackup,
+  deleteBackup,
+  clearAllBackups,
+  downloadBackup,
+  formatBackupTime,
+  type BackupSnapshot,
+} from '@/utils/backup';
 import type { VaultItem } from '@/types';
 
 // 设置侧边栏项目类型
-type SettingsSection = 'account' | 'security' | 'appearance' | 'importExport' | 'language' | 'about';
+type SettingsSection = 'account' | 'security' | 'appearance' | 'importExport' | 'backup' | 'language' | 'about';
 
 // 语言选项
 const languages: { value: 'zh' | 'en'; label: string }[] = [
@@ -54,11 +67,12 @@ export default function Settings() {
     { key: 'security', label: t.settings.securitySettings, icon: Lock },
     { key: 'appearance', label: t.settings.appearance, icon: Palette },
     { key: 'importExport', label: t.settings.importExport, icon: Import },
+    { key: 'backup', label: '备份与恢复', icon: HardDriveDownload },
     { key: 'language', label: t.settings.language, icon: Globe },
     { key: 'about', label: t.settings.about, icon: Info },
   ];
 
-  const importFormats = ['1Password', 'Bitwarden', 'LastPass', 'CSV'];
+  const importFormats = ['1Password', 'Bitwarden', 'LastPass', 'KeePass', 'CSV'];
   const exportFormats = ['CSV', 'JSON', '1PIF'];
 
   // ====== 账户安全状态 ======
@@ -104,6 +118,47 @@ export default function Settings() {
 
   // ====== 语言设置状态 ======
   const selectedLanguage = language;
+
+  // ====== 备份状态 ======
+  const [backups, setBackups] = useState<BackupSnapshot[]>([]);
+  const [backupMessage, setBackupMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // 加载备份列表
+  const refreshBackups = () => setBackups(getBackups());
+
+  // 切换到备份页面时加载备份数据
+  useEffect(() => {
+    if (activeSection === 'backup') {
+      refreshBackups();
+    }
+  }, [activeSection]);
+
+  // 立即备份
+  const handleCreateBackup = () => {
+    const snapshot = createBackup(itemsStore.list, vaults.list, []);
+    saveBackup(snapshot);
+    refreshBackups();
+    setBackupMessage({ type: 'success', text: `备份成功！包含 ${snapshot.itemCount} 个条目` });
+    setTimeout(() => setBackupMessage(null), 3000);
+  };
+
+  // 删除单个备份
+  const handleDeleteBackup = (id: string) => {
+    if (window.confirm('确定要删除此备份吗？')) {
+      deleteBackup(id);
+      refreshBackups();
+    }
+  };
+
+  // 清空所有备份
+  const handleClearAllBackups = () => {
+    if (window.confirm('确定要清空所有备份吗？此操作不可恢复。')) {
+      clearAllBackups();
+      refreshBackups();
+      setBackupMessage({ type: 'success', text: '已清空所有备份' });
+      setTimeout(() => setBackupMessage(null), 3000);
+    }
+  };
 
   // ====== 域名自动填充设置状态 ======
   const [newAllowedDomain, setNewAllowedDomain] = useState('');
@@ -1237,6 +1292,126 @@ export default function Settings() {
     </div>
   );
 
+  // 渲染备份与恢复部分
+  const renderBackup = () => (
+    <div className="space-y-8">
+      {/* 立即备份 */}
+      <div className="vault-card p-6">
+        <h3 className="text-lg font-semibold text-vault-text mb-4 flex items-center gap-2">
+          <HardDriveDownload size={20} className="text-vault-accent" />
+          本地备份
+        </h3>
+        <div className="space-y-4 max-w-lg">
+          <p className="text-sm text-vault-text-secondary">
+            将当前所有保险库数据创建一份本地备份快照。备份保存在浏览器本地存储中，最多保留 10 份。
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              className="vault-btn-primary text-sm flex items-center gap-1.5"
+              onClick={handleCreateBackup}
+            >
+              <HardDriveDownload size={16} />
+              立即备份
+            </button>
+            <span className="text-xs text-vault-text-muted">
+              当前共 {itemsStore.list.length} 个条目
+            </span>
+          </div>
+          {backupMessage && (
+            <div className={cn(
+              'flex items-center gap-2 p-3 rounded-lg text-sm',
+              backupMessage.type === 'success'
+                ? 'bg-vault-success/10 text-vault-success'
+                : 'bg-vault-error/10 text-vault-error'
+            )}>
+              {backupMessage.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
+              {backupMessage.text}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 备份历史列表 */}
+      <div className="vault-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-vault-text flex items-center gap-2">
+            <History size={20} className="text-vault-accent" />
+            备份历史
+          </h3>
+          {backups.length > 0 && (
+            <button
+              onClick={handleClearAllBackups}
+              className="text-xs text-vault-warn hover:text-vault-warn/80 transition-colors"
+            >
+              清空全部
+            </button>
+          )}
+        </div>
+
+        {backups.length === 0 ? (
+          <div className="text-center py-8">
+            <History size={32} className="mx-auto text-vault-text-muted mb-2" />
+            <p className="text-sm text-vault-text-muted">暂无备份记录</p>
+            <p className="text-xs text-vault-text-muted mt-1">点击"立即备份"创建第一份备份</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {backups.map((backup) => (
+              <div
+                key={backup.id}
+                className="flex items-center gap-3 p-3 rounded-lg bg-vault-hover/30 hover:bg-vault-hover/50 transition-colors"
+              >
+                <HardDriveDownload size={16} className="text-vault-text-muted shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-vault-text">
+                    {backup.itemCount} 个条目 · {backup.vaultCount} 个保险库
+                  </div>
+                  <div className="text-xs text-vault-text-muted">
+                    {formatBackupTime(backup.createdAt)}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => downloadBackup(backup)}
+                    className="p-1.5 rounded-lg text-vault-text-muted hover:text-vault-text hover:bg-vault-hover transition-colors"
+                    title="下载备份"
+                  >
+                    <Download size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteBackup(backup.id)}
+                    className="p-1.5 rounded-lg text-vault-text-muted hover:text-vault-warn hover:bg-vault-warn/10 transition-colors"
+                    title="删除备份"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 恢复说明 */}
+      <div className="vault-card p-6">
+        <h3 className="text-lg font-semibold text-vault-text mb-4 flex items-center gap-2">
+          <RotateCcw size={20} className="text-vault-accent" />
+          关于恢复
+        </h3>
+        <div className="space-y-3 text-sm text-vault-text-secondary max-w-lg">
+          <p>下载的备份文件为 JSON 格式，包含完整的保险库数据。</p>
+          <p>如需恢复数据，可通过"导入导出"功能选择 JSON 格式导入备份文件。</p>
+          <div className="flex items-start gap-2 p-3 bg-vault-warn/10 border border-vault-warn/20 rounded-lg">
+            <AlertTriangle size={16} className="text-vault-warn shrink-0 mt-0.5" />
+            <p className="text-xs text-vault-warn">
+              备份数据未加密，请妥善保管下载的备份文件，避免在公共设备上保存。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // 渲染语言设置部分
   const renderLanguage = () => (
     <div className="vault-card p-6">
@@ -1318,6 +1493,8 @@ export default function Settings() {
         return renderAppearance();
       case 'importExport':
         return renderImportExport();
+      case 'backup':
+        return renderBackup();
       case 'language':
         return renderLanguage();
       case 'about':

@@ -7,9 +7,10 @@ import { useItems } from '@/store';
 interface CopyButtonProps {
   value: string;
   itemId?: string;
+  className?: string;
 }
 
-export default function CopyButton({ value, itemId }: CopyButtonProps) {
+export default function CopyButton({ value, itemId, className }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const { incrementUsage } = useItems();
 
@@ -31,7 +32,8 @@ export default function CopyButton({ value, itemId }: CopyButtonProps) {
         'p-1 rounded transition-colors',
         copied
           ? 'text-vault-accent'
-          : 'text-vault-text-muted hover:text-vault-text hover:bg-vault-hover'
+          : 'text-vault-text-muted hover:text-vault-text hover:bg-vault-hover',
+        className,
       )}
       title={copied ? '已复制' : '复制'}
     >
