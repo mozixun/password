@@ -197,7 +197,7 @@ interface AdminState {
   addBlockedDomain: (domain: string) => void;
   removeBlockedDomain: (domain: string) => void;
   setMatchMode: (mode: 'exact' | 'fuzzy') => void;
-  generateRedeemCode: (planType: string, expiresDays: number, totalUses: number, customCode?: string) => RedeemCode;
+  generateRedeemCode: (planType: string, expiresAtDate: string, totalUses: number, subscriptionDays: number, customCode?: string) => RedeemCode;
   toggleRedeemCode: (id: string) => void;
   deleteRedeemCode: (id: string) => void;
   updateNotificationConfig: (config: Partial<NotificationSettings>) => void;
@@ -908,6 +908,7 @@ const mockAdminSettings: AdminSettings = {
       expiresAt: '2025-12-31T23:59:59Z',
       enabled: true,
       createdAt: '2024-01-01T00:00:00Z',
+      subscriptionDays: 365,
     },
     {
       id: 'redeem-2',
@@ -918,6 +919,7 @@ const mockAdminSettings: AdminSettings = {
       expiresAt: '2025-06-01T00:00:00Z',
       enabled: true,
       createdAt: '2024-01-01T00:00:00Z',
+      subscriptionDays: 365,
     },
   ],
 };
@@ -2529,9 +2531,10 @@ const useStore = create<StoreState>()((set, get) => ({
       }));
     },
 
-    generateRedeemCode: (planType, expiresDays, totalUses, customCode) => {
+    generateRedeemCode: (planType, expiresAtDate, totalUses, subscriptionDays, customCode) => {
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + expiresDays * 24 * 60 * 60 * 1000).toISOString();
+      // expiresAtDate 是 YYYY-MM-DD 格式，设置为当天 23:59:59
+      const expiresAt = `${expiresAtDate}T23:59:59Z`;
       const code = customCode || Array.from({ length: 12 }, () => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         const arr = new Uint32Array(1);
@@ -2539,7 +2542,7 @@ const useStore = create<StoreState>()((set, get) => ({
         return chars[arr[0] % chars.length];
       }).join('');
       const newCode: RedeemCode = {
-        id: `redeem-${Date.now()}`,
+        id: `redeem-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         code,
         planType: planType as Subscription['plan'],
         totalUses,
@@ -2547,6 +2550,7 @@ const useStore = create<StoreState>()((set, get) => ({
         expiresAt,
         enabled: true,
         createdAt: now.toISOString(),
+        subscriptionDays,
       };
       set((state) => ({
         admin: {
@@ -2705,8 +2709,9 @@ const useStore = create<StoreState>()((set, get) => ({
         rc.id === redeemCode.id ? { ...rc, usedCount: rc.usedCount + 1 } : rc
       );
 
-      // 更新用户订阅
-      const expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString();
+      // 更新用户订阅，使用兑换码的 subscriptionDays
+      const subscriptionMs = (redeemCode.subscriptionDays || 30) * 24 * 60 * 60 * 1000;
+      const expiresAt = new Date(now.getTime() + subscriptionMs).toISOString();
       const newSubscription: Subscription = {
         plan: redeemCode.planType,
         startAt: now.toISOString(),
@@ -2737,7 +2742,7 @@ const useStore = create<StoreState>()((set, get) => ({
         },
       }));
 
-      return { success: true, message: `兑换成功！已升级至 ${redeemCode.planType} 计划` };
+      return { success: true, message: `兑换成功！已升级至 ${redeemCode.planType} 计划，有效期 ${redeemCode.subscriptionDays} 天` };
     },
   },
 }));

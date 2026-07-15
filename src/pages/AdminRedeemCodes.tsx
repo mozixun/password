@@ -63,10 +63,14 @@ export default function AdminRedeemCodes() {
   const redeemCodes = admin.settings.redeemCodes;
 
   const [planType, setPlanType] = useState<SubscriptionPlan>('premium');
-  const [expiresDays, setExpiresDays] = useState(30);
+  const [subscriptionDays, setSubscriptionDays] = useState(30);
   const [totalUses, setTotalUses] = useState(1);
   const [batchCount, setBatchCount] = useState(1);
   const [customCode, setCustomCode] = useState('');
+  // 使用截止日期，默认30天后
+  const defaultExpiresDate = new Date();
+  defaultExpiresDate.setDate(defaultExpiresDate.getDate() + 30);
+  const [expiresDate, setExpiresDate] = useState(defaultExpiresDate.toISOString().split('T')[0]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -81,8 +85,8 @@ export default function AdminRedeemCodes() {
   }, [redeemCodes, searchQuery]);
 
   const handleGenerate = () => {
-    if (expiresDays < 1 || totalUses < 1) {
-      setMessage({ type: 'error', text: '过期天数和使用次数至少为 1' });
+    if (subscriptionDays < 1 || totalUses < 1) {
+      setMessage({ type: 'error', text: '套餐天数和使用次数至少为 1' });
       setTimeout(() => setMessage(null), 2000);
       return;
     }
@@ -91,10 +95,21 @@ export default function AdminRedeemCodes() {
       setTimeout(() => setMessage(null), 2000);
       return;
     }
+    if (!expiresDate) {
+      setMessage({ type: 'error', text: '请选择使用截止日期' });
+      setTimeout(() => setMessage(null), 2000);
+      return;
+    }
 
     const count = Math.min(Math.max(batchCount, 1), 100);
     for (let i = 0; i < count; i++) {
-      admin.generateRedeemCode(planType, expiresDays, totalUses, i === 0 ? customCode || undefined : undefined);
+      admin.generateRedeemCode(
+        planType,
+        expiresDate,
+        totalUses,
+        subscriptionDays,
+        i === 0 ? customCode || undefined : undefined
+      );
     }
 
     setMessage({ type: 'success', text: `成功生成 ${count} 个兑换码` });
@@ -172,17 +187,27 @@ export default function AdminRedeemCodes() {
               </div>
 
               <div>
-                <label className="block text-sm text-slate-400 mb-1.5">过期天数</label>
+                <label className="block text-sm text-slate-400 mb-1.5">套餐天数（用户获得的订阅时长）</label>
                 <div className="flex items-center gap-2">
                   <Clock size={16} className="text-slate-500" />
                   <input
                     type="number"
                     min={1}
-                    value={expiresDays}
-                    onChange={(e) => setExpiresDays(Number(e.target.value))}
+                    value={subscriptionDays}
+                    onChange={(e) => setSubscriptionDays(Number(e.target.value))}
                     className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent transition-colors"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-400 mb-1.5">使用截止日期</label>
+                <input
+                  type="date"
+                  value={expiresDate}
+                  onChange={(e) => setExpiresDate(e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent transition-colors"
+                />
               </div>
 
               <div>
@@ -267,7 +292,8 @@ export default function AdminRedeemCodes() {
                   <tr className="text-left text-xs text-slate-500 border-b border-slate-700/50">
                     <th className="pb-3 pl-3 font-medium">兑换码</th>
                     <th className="pb-3 font-medium">计划类型</th>
-                    <th className="pb-3 font-medium">过期时间</th>
+                    <th className="pb-3 font-medium">套餐天数</th>
+                    <th className="pb-3 font-medium">使用截止日期</th>
                     <th className="pb-3 font-medium">使用次数</th>
                     <th className="pb-3 font-medium">状态</th>
                     <th className="pb-3 pr-3 font-medium text-right">操作</th>
@@ -276,7 +302,7 @@ export default function AdminRedeemCodes() {
                 <tbody>
                   {filteredCodes.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-sm text-slate-500">
+                      <td colSpan={7} className="py-8 text-center text-sm text-slate-500">
                         暂无兑换码
                       </td>
                     </tr>
@@ -316,7 +342,13 @@ export default function AdminRedeemCodes() {
                           <td className="py-3 text-sm text-slate-400">
                             <div className="flex items-center gap-1">
                               <Clock size={12} className="text-slate-500" />
-                              {formatDate(rc.expiresAt)}
+                              {rc.subscriptionDays} 天
+                            </div>
+                          </td>
+                          <td className="py-3 text-sm text-slate-400">
+                            <div className="flex items-center gap-1">
+                              <Clock size={12} className="text-slate-500" />
+                              {new Date(rc.expiresAt).toLocaleDateString('zh-CN')}
                             </div>
                           </td>
                           <td className="py-3 text-sm text-slate-400">

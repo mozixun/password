@@ -261,6 +261,7 @@ export interface RedeemCode {
   expiresAt: string;
   enabled: boolean;
   createdAt: string;
+  subscriptionDays: number;
 }
 
 export interface Notification {
