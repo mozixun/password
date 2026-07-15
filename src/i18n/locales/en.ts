@@ -38,6 +38,8 @@ export const en = {
     vaults: 'Vaults',
     admin: 'Admin',
     folders: 'Folders',
+    trash: 'Trash',
+    favorites: 'Favorites',
   },
   dashboard: {
     welcomeBack: 'Welcome Back',

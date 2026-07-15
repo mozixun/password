@@ -38,6 +38,8 @@ export const zh = {
     vaults: '保管库管理',
     admin: '管理员设置',
     folders: '文件夹',
+    trash: '回收站',
+    favorites: '收藏夹',
   },
   dashboard: {
     welcomeBack: '欢迎回来',

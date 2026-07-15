@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
 import { checkEmailBreaches, type BreachResult } from '@/utils/breachDetection';
 
 // Tab 类型定义
-type WatchtowerTab = 'weak' | 'reused' | 'compromised' | 'expired';
+type WatchtowerTab = 'weak' | 'reused' | 'compromised' | 'expired' | 'missing_2fa';
 
 // 根据项目类型获取图标
 function getItemIcon(type: ItemType) {
@@ -170,19 +170,25 @@ export default function Watchtower() {
   const weakAlerts = useMemo(() => alerts.filter((a) => a.type === 'weak'), [alerts]);
   const compromisedAlerts = useMemo(() => alerts.filter((a) => a.type === 'compromised'), [alerts]);
   const expiredAlerts = useMemo(() => alerts.filter((a) => a.type === 'expired'), [alerts]);
+  const missing2FAAlerts = useMemo(() => alerts.filter((a) => a.type === 'missing_2fa'), [alerts]);
+
+  // 缺失2FA的登录项目
+  const missing2FAItems = useMemo(() => {
+    return items.filter(
+      (item) => item.type === 'login' && !item.totp && !item.passkey && !item.trashedAt,
+    );
+  }, [items]);
 
   // 按密码分组（用于重复密码标签页）
   const reusedGroups = useMemo(() => {
-    // 找出有重复密码的项目
     const passwordMap = new Map<string, VaultItem[]>();
     items.forEach((item) => {
-      if (item.password) {
+      if (item.password && !item.trashedAt) {
         const existing = passwordMap.get(item.password) || [];
         existing.push(item);
         passwordMap.set(item.password, existing);
       }
     });
-    // 只保留重复的
     const groups: { password: string; items: VaultItem[] }[] = [];
     passwordMap.forEach((groupItems, password) => {
       if (groupItems.length > 1) {
@@ -210,6 +216,7 @@ export default function Watchtower() {
     { key: 'weak', label: '弱密码', count: summary.weakPasswords },
     { key: 'reused', label: '重复密码', count: summary.reusedPasswords },
     { key: 'compromised', label: '已泄露', count: summary.compromisedPasswords },
+    { key: 'missing_2fa', label: '缺失2FA', count: summary.missing2FA },
     { key: 'expired', label: '已过期', count: summary.expiredItems },
   ];
 
@@ -482,6 +489,55 @@ export default function Watchtower() {
                 <SafeState />
               )}
             </div>
+          )}
+
+          {/* 缺失2FA标签页 */}
+          {activeTab === 'missing_2fa' && (
+            missing2FAItems.length === 0 ? <SafeState /> : (
+              <div className="space-y-2">
+                <div className="vault-card p-4 mb-4 bg-vault-accent/5 border-vault-accent/20">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-vault-accent/15 flex items-center justify-center shrink-0">
+                      <Smartphone size={20} className="text-vault-accent" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-vault-text mb-1">为什么要启用两步验证？</h3>
+                      <p className="text-xs text-vault-text-secondary leading-relaxed">
+                        两步验证（2FA）为您的账户增加了额外的安全层。即使密码泄露，攻击者也需要第二个验证因素才能登录。
+                        建议为所有重要账户启用 TOTP 或通行密钥验证。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {missing2FAItems.map((item) => (
+                  <div key={item.id} className="vault-card p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', getIconBg(item.type))}>
+                        {getItemIcon(item.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-medium text-vault-text">{item.title}</h3>
+                          <span className="vault-badge bg-vault-orange/15 text-vault-orange text-[10px]">
+                            建议开启
+                          </span>
+                        </div>
+                        <p className="text-xs text-vault-text-secondary mt-0.5">{item.username || item.email || ''}</p>
+                        {item.url && (
+                          <p className="text-xs text-vault-text-muted mt-0.5 truncate">{item.url}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => navigate(`/items/detail/${item.id}`)}
+                        className="vault-btn-secondary text-xs py-1.5 px-3 shrink-0"
+                      >
+                        去设置
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
 
           {/* 已过期标签页 */}

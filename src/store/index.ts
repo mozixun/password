@@ -111,6 +111,8 @@ interface ItemsState {
   deleteSelected: () => void;
   restoreSelected: () => void;
   permanentDeleteSelected: () => void;
+  favoriteSelected: () => void;
+  unfavoriteSelected: () => void;
   moveSelected: (folderId: string) => void;
   exportSelected: () => string;
   setSearchQuery: (query: string) => void;
@@ -1888,6 +1890,42 @@ const useStore = create<StoreState>()((set, get) => ({
       });
     },
 
+    favoriteSelected: () => {
+      const { selectedItemIds } = get().items;
+      if (selectedItemIds.length === 0) return;
+      const now = new Date().toISOString();
+
+      set((state) => ({
+        items: {
+          ...state.items,
+          list: state.items.list.map((i) =>
+            selectedItemIds.includes(i.id)
+              ? { ...i, favorite: true, updatedAt: now }
+              : i,
+          ),
+          selectedItemIds: [],
+        },
+      }));
+    },
+
+    unfavoriteSelected: () => {
+      const { selectedItemIds } = get().items;
+      if (selectedItemIds.length === 0) return;
+      const now = new Date().toISOString();
+
+      set((state) => ({
+        items: {
+          ...state.items,
+          list: state.items.list.map((i) =>
+            selectedItemIds.includes(i.id)
+              ? { ...i, favorite: false, updatedAt: now }
+              : i,
+          ),
+          selectedItemIds: [],
+        },
+      }));
+    },
+
     moveSelected: (folderId) => {
       const { selectedItemIds } = get().items;
       set((state) => ({
@@ -2096,7 +2134,7 @@ const useStore = create<StoreState>()((set, get) => ({
     },
 
     runFullAudit: () => {
-      const items = get().items.list;
+      const items = get().items.list.filter(i => !i.trashedAt);
       const alerts: SecurityAlert[] = [];
       const weakPasswords: string[] = [];
       const reusedPasswordMap = new Map<string, string[]>();

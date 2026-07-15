@@ -22,6 +22,10 @@ import {
   Smartphone,
   X,
   Bell,
+  Trash2,
+  Star,
+  Edit3,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useStore } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -60,6 +64,8 @@ export default function Sidebar() {
   ];
 
   const bottomNavItems: NavItem[] = [
+    { path: '/items?favorite=true', labelKey: 'favorites', icon: <Star size={18} /> },
+    { path: '/trash', labelKey: 'trash', icon: <Trash2 size={18} /> },
     { path: '/vaults', labelKey: 'vaults', icon: <FolderOpen size={18} /> },
     { path: '/notifications', labelKey: 'notifications', icon: <Bell size={18} /> },
     { path: '/settings', labelKey: 'settings', icon: <Settings size={18} /> },
@@ -96,6 +102,9 @@ export default function Sidebar() {
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editingFolderName, setEditingFolderName] = useState('');
+  const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null);
 
   const currentVaultId = vaults.currentVaultId;
   const currentFolders = folders.list.filter(f => f.vaultId === currentVaultId);
@@ -105,6 +114,27 @@ export default function Sidebar() {
       folders.addFolder({ vaultId: currentVaultId, name: newFolderName.trim() });
       setNewFolderName('');
       setShowNewFolderModal(false);
+    }
+  };
+
+  const handleStartEditFolder = (folderId: string, folderName: string) => {
+    setEditingFolderId(folderId);
+    setEditingFolderName(folderName);
+    setActiveFolderMenu(null);
+  };
+
+  const handleSaveEditFolder = () => {
+    if (editingFolderId && editingFolderName.trim()) {
+      folders.updateFolder(editingFolderId, { name: editingFolderName.trim() });
+      setEditingFolderId(null);
+      setEditingFolderName('');
+    }
+  };
+
+  const handleDeleteFolder = (folderId: string, folderName: string) => {
+    if (window.confirm(`确定要删除文件夹 "${folderName}" 吗？文件夹中的项目不会被删除，只是会移出此文件夹。`)) {
+      folders.deleteFolder(folderId);
+      setActiveFolderMenu(null);
     }
   };
 
@@ -198,22 +228,73 @@ export default function Sidebar() {
             </div>
             <div className="space-y-0.5 mt-1">
               {currentFolders.map((folder) => (
-                <NavLink
-                  key={folder.id}
-                  to={`/items?folder=${folder.id}`}
-                  className={() =>
-                    cn(
-                      'flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors',
-                      isNavItemActive(`/items?folder=${folder.id}`)
-                        ? 'bg-vault-accent/10 text-vault-accent'
-                        : 'text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text'
-                    )
-                  }
-                >
-                  <FolderOpen size={14} />
-                  <span className="truncate">{folder.name}</span>
-                  <span className="ml-auto text-xs text-vault-text-muted">{folder.itemCount}</span>
-                </NavLink>
+                <div key={folder.id} className="relative group">
+                  {editingFolderId === folder.id ? (
+                    <div className="flex items-center gap-2 px-2 py-1.5">
+                      <FolderOpen size={14} className="text-vault-text-muted" />
+                      <input
+                        type="text"
+                        value={editingFolderName}
+                        onChange={(e) => setEditingFolderName(e.target.value)}
+                        className="bg-transparent outline-none text-sm text-vault-text flex-1 min-w-0"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveEditFolder();
+                          if (e.key === 'Escape') {
+                            setEditingFolderId(null);
+                            setEditingFolderName('');
+                          }
+                        }}
+                        onBlur={handleSaveEditFolder}
+                      />
+                    </div>
+                  ) : (
+                    <NavLink
+                      to={`/items?folder=${folder.id}`}
+                      className={() =>
+                        cn(
+                          'flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors',
+                          isNavItemActive(`/items?folder=${folder.id}`)
+                            ? 'bg-vault-accent/10 text-vault-accent'
+                            : 'text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text'
+                        )
+                      }
+                    >
+                      <FolderOpen size={14} />
+                      <span className="truncate flex-1">{folder.name}</span>
+                      <span className="text-xs text-vault-text-muted">{folder.itemCount}</span>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setActiveFolderMenu(activeFolderMenu === folder.id ? null : folder.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-vault-hover/50 transition-all"
+                        title="更多操作"
+                      >
+                        <MoreHorizontal size={12} />
+                      </button>
+                    </NavLink>
+                  )}
+                  {activeFolderMenu === folder.id && (
+                    <div className="absolute right-0 top-full mt-1 w-36 bg-vault-surface border border-vault-border rounded-lg shadow-xl py-1 z-50 animate-fade-in">
+                      <button
+                        onClick={() => handleStartEditFolder(folder.id, folder.name)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-vault-text hover:bg-vault-hover transition-colors"
+                      >
+                        <Edit3 size={14} />
+                        重命名
+                      </button>
+                      <button
+                        onClick={() => handleDeleteFolder(folder.id, folder.name)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-vault-warn hover:bg-vault-warn/10 transition-colors"
+                      >
+                        <Trash2 size={14} />
+                        删除
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
               {currentFolders.length === 0 && (
                 <p className="px-2 py-2 text-xs text-vault-text-muted">暂无文件夹</p>

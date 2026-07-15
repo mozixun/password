@@ -1,9 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Trash2,
   RotateCcw,
-  X,
   Search,
   KeyRound,
   CreditCard,
@@ -78,7 +76,6 @@ function getItemTypeBg(type: ItemType): string {
 }
 
 export default function Trash() {
-  const navigate = useNavigate();
   const itemsStore = useItems();
   const vaultsStore = useVaults();
   const {
@@ -95,7 +92,7 @@ export default function Trash() {
     emptyTrash,
     toggleSelect,
   } = itemsStore;
-  const { list: vaults, currentVaultId } = vaultsStore;
+  const { list: vaults } = vaultsStore;
 
   const [activeTypeFilter, setActiveTypeFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('recent');
@@ -203,7 +200,7 @@ export default function Trash() {
 
   const contextMenuItems: ContextMenuItem[] = [
     {
-      key: 'restore',
+      id: 'restore',
       label: '恢复',
       icon: <RotateCcw size={14} />,
       onClick: () => {
@@ -212,7 +209,7 @@ export default function Trash() {
       },
     },
     {
-      key: 'permanent-delete',
+      id: 'permanent-delete',
       label: '永久删除',
       icon: <Trash2 size={14} />,
       danger: true,
@@ -505,8 +502,7 @@ export default function Trash() {
 
       {isContextMenuOpen && contextMenuSelectedItem && (
         <ContextMenu
-          x={contextMenuPosition.x}
-          y={contextMenuPosition.y}
+          position={contextMenuPosition}
           items={contextMenuItems}
           onClose={() => setIsContextMenuOpen(false)}
         />

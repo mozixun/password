@@ -120,10 +120,24 @@ export default function Items() {
   const { list: vaults, currentVaultId, setCurrentVault } = useVaults();
   const { list: folders } = useFolders();
 
+  // 从 URL 参数推断当前类型筛选
+  const activeTypeFilter = useMemo(() => {
+    if (typePath && pathToTypeMap[typePath]) {
+      return pathToTypeMap[typePath];
+    }
+    const searchType = searchParams.get('type');
+    return searchType || 'all';
+  }, [typePath, searchParams]);
+
+  // 从 URL 参数读取收藏筛选
+  const initialFavoritesOnly = useMemo(() => {
+    return searchParams.get('favorite') === 'true';
+  }, [searchParams]);
+
   // 本地 UI 状态
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<string>('recent');
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(initialFavoritesOnly);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showVaultDropdown, setShowVaultDropdown] = useState(false);
   const [showFolderDropdown, setShowFolderDropdown] = useState(false);
@@ -135,15 +149,6 @@ export default function Items() {
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [contextMenuSelectedItem, setContextMenuSelectedItem] = useState<VaultItem | null>(null);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
-
-  // 从 URL 参数推断当前类型筛选
-  const activeTypeFilter = useMemo(() => {
-    if (typePath && pathToTypeMap[typePath]) {
-      return pathToTypeMap[typePath];
-    }
-    const searchType = searchParams.get('type');
-    return searchType || 'all';
-  }, [typePath, searchParams]);
 
   // 当前保险库对象
   const currentVault = useMemo(
@@ -162,7 +167,7 @@ export default function Items() {
 
   // 当前保险库下的条目
   const vaultItems = useMemo(
-    () => items.filter((item) => item.vaultId === currentVaultId),
+    () => items.filter((item) => item.vaultId === currentVaultId && !item.trashedAt),
     [items, currentVaultId],
   );
 

@@ -153,6 +153,92 @@ export function importFrom1PasswordCSV(csvContent: string): VaultItem[] {
 }
 
 /**
+ * 从LastPass CSV格式导入条目
+ */
+export function importFromLastPassCSV(csvContent: string): VaultItem[] {
+  const lines = csvContent.split('\n').filter((line) => line.trim());
+  if (lines.length < 2) return [];
+
+  const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
+  const items: VaultItem[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    const row: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      row[header] = values[index] || '';
+    });
+
+    const title = row.name || row.url || row['用户名'] || '';
+    if (!title) continue;
+
+    const now = new Date().toISOString();
+
+    items.push({
+      id: `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      vaultId: 'default',
+      type: 'login',
+      title,
+      username: row.username || row['用户名'] || '',
+      password: row.password || row['密码'] || '',
+      url: row.url || row['网址'] || '',
+      notes: row.notes || row.extra || row['备注'] || '',
+      tags: row.grouping
+        ? [row.grouping]
+        : [],
+      favorite: row.fav === '1' || row.favorite === 'true',
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  return items;
+}
+
+/**
+ * 从KeePass CSV格式导入条目
+ */
+export function importFromKeePassCSV(csvContent: string): VaultItem[] {
+  const lines = csvContent.split('\n').filter((line) => line.trim());
+  if (lines.length < 2) return [];
+
+  const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
+  const items: VaultItem[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    const row: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      row[header] = values[index] || '';
+    });
+
+    const title = row.title || row.account || '';
+    if (!title) continue;
+
+    const now = new Date().toISOString();
+
+    items.push({
+      id: `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      vaultId: 'default',
+      type: 'login',
+      title,
+      username: row['user name'] || row.username || row.login_name || '',
+      password: row.password || '',
+      url: row.url || row.website || '',
+      notes: row.notes || row.comments || '',
+      tags: row.group || row.grouping
+        ? [row.group || row.grouping]
+        : [],
+      favorite: false,
+      createdAt: row['creation time'] ? new Date(row['creation time']).toISOString() : now,
+      updatedAt: row['last modification time'] ? new Date(row['last modification time']).toISOString() : now,
+    });
+  }
+
+  return items;
+}
+
+/**
  * 从VaultKey JSON格式导入条目
  */
 export function importFromVaultKeyJSON(jsonContent: string): VaultItem[] {
@@ -326,6 +412,10 @@ export function importData(content: string, format: string): VaultItem[] {
       return importFrom1PasswordCSV(content);
     case 'bitwarden':
       return importFromBitwardenJSON(content);
+    case 'lastpass':
+      return importFromLastPassCSV(content);
+    case 'keepass':
+      return importFromKeePassCSV(content);
     case 'json':
       return importFromVaultKeyJSON(content);
     default: {
