@@ -178,20 +178,20 @@ export default function Dashboard() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {[
-              { label: t.dashboard.newLogin, type: 'login', color: 'vault-accent' },
-              { label: t.dashboard.newCard, type: 'credit_card', color: 'vault-purple' },
-              { label: t.dashboard.newNote, type: 'note', color: 'vault-green' },
-              { label: t.dashboard.newAuthenticator, type: 'totp_authenticator', color: 'vault-blue' },
-              { label: t.dashboard.newPasskey, type: 'passkey', color: 'vault-orange' },
-              { label: t.sidebar.passwordGenerator, path: '/generator', color: 'vault-pink' },
+              { label: t.dashboard.newLogin, type: 'login', bg: 'bg-vault-accent/15', borderHover: 'hover:border-vault-accent/50', text: 'text-vault-accent', bgHover: 'group-hover:bg-vault-accent/25' },
+              { label: t.dashboard.newCard, type: 'credit_card', bg: 'bg-vault-purple/15', borderHover: 'hover:border-vault-purple/50', text: 'text-vault-purple', bgHover: 'group-hover:bg-vault-purple/25' },
+              { label: t.dashboard.newNote, type: 'note', bg: 'bg-vault-green/15', borderHover: 'hover:border-vault-green/50', text: 'text-vault-green', bgHover: 'group-hover:bg-vault-green/25' },
+              { label: t.dashboard.newAuthenticator, type: 'totp_authenticator', bg: 'bg-vault-blue/15', borderHover: 'hover:border-vault-blue/50', text: 'text-vault-blue', bgHover: 'group-hover:bg-vault-blue/25' },
+              { label: t.dashboard.newPasskey, type: 'passkey', bg: 'bg-vault-orange/15', borderHover: 'hover:border-vault-orange/50', text: 'text-vault-orange', bgHover: 'group-hover:bg-vault-orange/25' },
+              { label: t.sidebar.passwordGenerator, path: '/generator', bg: 'bg-vault-pink/15', borderHover: 'hover:border-vault-pink/50', text: 'text-vault-pink', bgHover: 'group-hover:bg-vault-pink/25' },
             ].map((action) => (
               <button
                 key={action.label}
                 onClick={() => navigate(action.path || (action.type ? `/items/new?type=${action.type}` : '/items/new'))}
-                className={`vault-card p-3 flex flex-col items-center gap-2 hover:border-${action.color}/50 transition-colors group`}
+                className={`vault-card p-3 flex flex-col items-center gap-2 ${action.borderHover} transition-colors group`}
               >
-                <div className={`w-9 h-9 rounded-lg bg-${action.color}/15 flex items-center justify-center group-hover:bg-${action.color}/25 transition-colors`}>
-                  <Plus size={18} className={`text-${action.color}`} />
+                <div className={`w-9 h-9 rounded-lg ${action.bg} flex items-center justify-center ${action.bgHover} transition-colors`}>
+                  <Plus size={18} className={action.text} />
                 </div>
                 <span className="text-xs font-medium text-vault-text">{action.label}</span>
               </button>

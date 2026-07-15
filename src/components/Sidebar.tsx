@@ -21,6 +21,7 @@ import {
   Fingerprint,
   Smartphone,
   X,
+  Bell,
 } from 'lucide-react';
 import { useStore } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -34,7 +35,7 @@ interface NavItem {
 }
 
 export default function Sidebar() {
-  const { ui, auth, folders, vaults } = useStore();
+  const { ui, auth, folders, vaults, notifications } = useStore();
   const { t } = useTranslation();
   const collapsed = ui.sidebarCollapsed;
   const toggleSidebar = ui.toggleSidebar;
@@ -60,6 +61,7 @@ export default function Sidebar() {
 
   const bottomNavItems: NavItem[] = [
     { path: '/vaults', labelKey: 'vaults', icon: <FolderOpen size={18} /> },
+    { path: '/notifications', labelKey: 'notifications', icon: <Bell size={18} /> },
     { path: '/settings', labelKey: 'settings', icon: <Settings size={18} /> },
   ];
 
@@ -246,23 +248,43 @@ export default function Sidebar() {
         <div className="my-2 border-t border-vault-border/50" />
 
         {/* 底部导航 */}
-        {bottomNavItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={() =>
-              cn(
-                'sidebar-item',
-                isNavItemActive(item.path) && 'active',
-                collapsed && 'justify-center px-0'
-              )
-            }
-            title={collapsed ? t.sidebar[item.labelKey as keyof typeof t.sidebar] : undefined}
-          >
-            <span className="shrink-0">{item.icon}</span>
-            {!collapsed && <span className="truncate text-sm">{t.sidebar[item.labelKey as keyof typeof t.sidebar]}</span>}
-          </NavLink>
-        ))}
+        {bottomNavItems.map((item) => {
+          const isNotification = item.path === '/notifications';
+          const showBadge = isNotification && notifications.unreadCount > 0;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={() =>
+                cn(
+                  'sidebar-item relative',
+                  isNavItemActive(item.path) && 'active',
+                  collapsed && 'justify-center px-0'
+                )
+              }
+              title={collapsed ? t.sidebar[item.labelKey as keyof typeof t.sidebar] : undefined}
+            >
+              <span className="shrink-0 relative">
+                {item.icon}
+                {showBadge && (
+                  <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center text-[10px] font-bold bg-vault-warn text-white rounded-full px-1">
+                    {notifications.unreadCount > 99 ? '99+' : notifications.unreadCount}
+                  </span>
+                )}
+              </span>
+              {!collapsed && (
+                <div className="flex items-center gap-1">
+                  <span className="truncate text-sm">{t.sidebar[item.labelKey as keyof typeof t.sidebar]}</span>
+                  {showBadge && (
+                    <span className="min-w-[18px] h-4 flex items-center justify-center text-[10px] font-bold bg-vault-warn text-white rounded-full px-1.5">
+                      {notifications.unreadCount}
+                    </span>
+                  )}
+                </div>
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* 底部：用户信息 + 锁定 + 折叠按钮 */}

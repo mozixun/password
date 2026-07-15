@@ -6,6 +6,7 @@ import { useThemeEffect } from "@/hooks/useTheme";
 const Login = lazy(() => import("@/pages/Login"));
 const Unlock = lazy(() => import("@/pages/Unlock"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Home = lazy(() => import("@/pages/Home"));
 const Items = lazy(() => import("@/pages/Items"));
 const ItemDetail = lazy(() => import("@/pages/ItemDetail"));
 const Generator = lazy(() => import("@/pages/Generator"));
@@ -20,6 +21,7 @@ const AdminLogs = lazy(() => import("@/pages/AdminLogs"));
 const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
 const AdminRedeemCodes = lazy(() => import("@/pages/AdminRedeemCodes"));
 const Profile = lazy(() => import("@/pages/Profile"));
+const Notifications = lazy(() => import("@/pages/Notifications"));
 const DocsHome = lazy(() => import("@/pages/docs/DocsHome"));
 const InstallationDoc = lazy(() => import("@/pages/docs/InstallationDoc"));
 const UsageDoc = lazy(() => import("@/pages/docs/UsageDoc"));
@@ -82,6 +84,21 @@ function AdminLoginRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RootRedirect() {
+  const isAuthenticated = useStore((s) => s.auth.isAuthenticated);
+  const isLocked = useStore((s) => s.auth.isLocked);
+  
+  if (isAuthenticated && !isLocked) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  if (isAuthenticated && isLocked) {
+    return <Navigate to="/unlock" replace />;
+  }
+  
+  return <Navigate to="/home" replace />;
+}
+
 function Loading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-vault-bg">
@@ -131,6 +148,12 @@ export default function App() {
         <Route
           path="/unlock"
           element={<UnlockRoute />}
+        />
+
+        {/* 首页（公开访问） */}
+        <Route
+          path="/home"
+          element={<Home />}
         />
 
         {/* 受保护页面 */}
@@ -278,10 +301,18 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <Notifications />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 默认重定向 */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<RootRedirect />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
       </Suspense>
     </Router>

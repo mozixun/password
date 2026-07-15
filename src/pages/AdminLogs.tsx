@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Filter, Clock, User, Shield, FileText, ChevronDown } from 'lucide-react';
 import AdminLayout from './AdminLayout';
+import { cn } from '@/lib/utils';
 
 interface LogEntry {
   id: string;

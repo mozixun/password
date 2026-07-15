@@ -187,6 +187,7 @@ interface SettingsState {
 interface ProfileState {
   profile: UserProfile;
   devices: Device[];
+  removeDevice: (deviceId: string) => void;
 }
 
 interface AdminState {
@@ -2428,6 +2429,15 @@ const useStore = create<StoreState>()((set, get) => ({
   profile: {
     profile: mockProfile,
     devices: mockDevices,
+
+    removeDevice: (deviceId: string) => {
+      set((state) => ({
+        profile: {
+          ...state.profile,
+          devices: state.profile.devices.filter((d) => d.id !== deviceId),
+        },
+      }));
+    },
   },
 
   // ---------- 管理员设置切片 ----------

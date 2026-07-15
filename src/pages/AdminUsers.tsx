@@ -23,13 +23,16 @@ export default function AdminUsers() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const [users] = useState<User[]>([
+  const [users, setUsers] = useState<User[]>([
     { id: '1', email: 'admin@vaultkey.com', name: '系统管理员', role: 'admin', status: 'active', createdAt: '2024-01-01', lastLogin: '2025-07-15 10:30', vaultCount: 3, twoFactorEnabled: true },
     { id: '2', email: 'zhangsan@example.com', name: '张三', role: 'user', status: 'active', createdAt: '2024-03-15', lastLogin: '2025-07-15 09:15', vaultCount: 2, twoFactorEnabled: true },
     { id: '3', email: 'lisi@example.com', name: '李四', role: 'user', status: 'active', createdAt: '2024-05-20', lastLogin: '2025-07-14 16:45', vaultCount: 1, twoFactorEnabled: false },
     { id: '4', email: 'wangwu@example.com', name: '王五', role: 'user', status: 'inactive', createdAt: '2024-06-10', lastLogin: '2025-06-20 11:00', vaultCount: 1, twoFactorEnabled: false },
     { id: '5', email: 'chenliu@example.com', name: '陈六', role: 'user', status: 'pending', createdAt: '2025-07-14', lastLogin: '-', vaultCount: 0, twoFactorEnabled: false },
   ]);
+
+  const [addForm, setAddForm] = useState({ email: '', name: '', role: 'user' as 'admin' | 'user' });
+  const [editForm, setEditForm] = useState({ email: '', name: '', role: 'user' as 'admin' | 'user', status: 'active' as 'active' | 'inactive' | 'pending' });
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch = user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -41,13 +44,49 @@ export default function AdminUsers() {
 
   const handleDelete = (userId: string) => {
     if (confirm('确定要删除该用户吗？')) {
-      console.log('Delete user:', userId);
+      setUsers(users.filter(user => user.id !== userId));
     }
   };
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);
+    setEditForm({ email: user.email, name: user.name, role: user.role, status: user.status });
     setShowEditModal(true);
+  };
+
+  const handleAddUser = () => {
+    if (!addForm.email || !addForm.name) {
+      alert('请填写完整信息');
+      return;
+    }
+    const newUser: User = {
+      id: Date.now().toString(),
+      email: addForm.email,
+      name: addForm.name,
+      role: addForm.role,
+      status: 'active',
+      createdAt: new Date().toISOString().split('T')[0],
+      lastLogin: '-',
+      vaultCount: 0,
+      twoFactorEnabled: false,
+    };
+    setUsers([newUser, ...users]);
+    setAddForm({ email: '', name: '', role: 'user' });
+    setShowAddModal(false);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editForm.email || !editForm.name) {
+      alert('请填写完整信息');
+      return;
+    }
+    setUsers(users.map(user => 
+      user.id === selectedUser?.id 
+        ? { ...user, email: editForm.email, name: editForm.name, role: editForm.role, status: editForm.status }
+        : user
+    ));
+    setShowEditModal(false);
+    setSelectedUser(null);
   };
 
   const statusColors = {
@@ -222,15 +261,31 @@ export default function AdminUsers() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-slate-400 mb-1.5">邮箱地址</label>
-                  <input type="email" className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent" placeholder="user@example.com" />
+                  <input 
+                    type="email" 
+                    value={addForm.email}
+                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent" 
+                    placeholder="user@example.com" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1.5">姓名</label>
-                  <input type="text" className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent" placeholder="用户名" />
+                  <input 
+                    type="text" 
+                    value={addForm.name}
+                    onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-vault-accent" 
+                    placeholder="用户名" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1.5">角色</label>
-                  <select className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent">
+                  <select 
+                    value={addForm.role}
+                    onChange={(e) => setAddForm({ ...addForm, role: e.target.value as 'admin' | 'user' })}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent"
+                  >
                     <option value="user">普通用户</option>
                     <option value="admin">管理员</option>
                   </select>
@@ -238,7 +293,7 @@ export default function AdminUsers() {
               </div>
               <div className="flex gap-3 mt-6">
                 <button className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl py-2.5 transition-colors" onClick={() => setShowAddModal(false)}>取消</button>
-                <button className="flex-1 bg-vault-accent hover:bg-vault-accent-hover text-white font-medium rounded-xl py-2.5 transition-colors">创建用户</button>
+                <button className="flex-1 bg-vault-accent hover:bg-vault-accent-hover text-white font-medium rounded-xl py-2.5 transition-colors" onClick={handleAddUser}>创建用户</button>
               </div>
             </div>
           </div>
@@ -251,22 +306,40 @@ export default function AdminUsers() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-slate-400 mb-1.5">邮箱地址</label>
-                  <input type="email" defaultValue={selectedUser.email} className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent" />
+                  <input 
+                    type="email" 
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1.5">姓名</label>
-                  <input type="text" defaultValue={selectedUser.name} className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent" />
+                  <input 
+                    type="text" 
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1.5">角色</label>
-                  <select defaultValue={selectedUser.role} className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent">
+                  <select 
+                    value={editForm.role}
+                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value as 'admin' | 'user' })}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent"
+                  >
                     <option value="user">普通用户</option>
                     <option value="admin">管理员</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1.5">状态</label>
-                  <select defaultValue={selectedUser.status} className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent">
+                  <select 
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value as 'active' | 'inactive' | 'pending' })}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent"
+                  >
                     <option value="active">活跃</option>
                     <option value="inactive">停用</option>
                     <option value="pending">待审核</option>
@@ -275,7 +348,7 @@ export default function AdminUsers() {
               </div>
               <div className="flex gap-3 mt-6">
                 <button className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl py-2.5 transition-colors" onClick={() => setShowEditModal(false)}>取消</button>
-                <button className="flex-1 bg-vault-accent hover:bg-vault-accent-hover text-white font-medium rounded-xl py-2.5 transition-colors">保存更改</button>
+                <button className="flex-1 bg-vault-accent hover:bg-vault-accent-hover text-white font-medium rounded-xl py-2.5 transition-colors" onClick={handleSaveEdit}>保存更改</button>
               </div>
             </div>
           </div>

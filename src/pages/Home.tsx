@@ -150,7 +150,7 @@ export default function Home() {
               {items.list.slice(0, 5).map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => navigate(`/items/${item.id}`)}
+                  onClick={() => navigate(`/items/detail/${item.id}`)}
                   className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-vault-hover transition-colors text-left"
                 >
                   <div className="w-10 h-10 rounded-lg bg-vault-accent/10 flex items-center justify-center">

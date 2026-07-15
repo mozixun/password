@@ -19,7 +19,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
-import { useProfile, useAuth, useSubscription } from '@/store';
+import { useProfile, useAuth, useSubscription, useStore } from '@/store';
 import { cn } from '@/lib/utils';
 
 // 设备类型图标映射
@@ -35,6 +35,7 @@ const deviceIcons: Record<string, React.ReactNode> = {
 export default function Profile() {
   const navigate = useNavigate();
   const { profile, devices } = useProfile();
+  const { removeDevice } = useStore((s) => s.profile);
   const auth = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [deviceToRevoke, setDeviceToRevoke] = useState<string | null>(null);
@@ -402,7 +403,9 @@ export default function Profile() {
               </button>
               <button
                 onClick={() => {
-                  // 模拟注销设备
+                  if (deviceToRevoke) {
+                    removeDevice(deviceToRevoke);
+                  }
                   setDeviceToRevoke(null);
                 }}
                 className="vault-btn-primary flex-1 bg-vault-warn hover:bg-vault-warn/80"
