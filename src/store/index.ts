@@ -96,20 +96,27 @@ interface ItemsState {
   itemTypeFilter: string | null;
   tagFilter: string | null;
   selectedItemIds: string[];
+  showTrashed: boolean;
   addItem: (item: Omit<VaultItem, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateItem: (id: string, updates: Partial<VaultItem>) => void;
   deleteItem: (id: string) => void;
+  restoreItem: (id: string) => void;
+  permanentDeleteItem: (id: string) => void;
+  emptyTrash: () => void;
   toggleFavorite: (id: string) => void;
   togglePin: (id: string) => void;
   toggleSelect: (id: string) => void;
   selectAll: () => void;
   clearSelection: () => void;
   deleteSelected: () => void;
+  restoreSelected: () => void;
+  permanentDeleteSelected: () => void;
   moveSelected: (folderId: string) => void;
   exportSelected: () => string;
   setSearchQuery: (query: string) => void;
   setItemTypeFilter: (type: string | null) => void;
   setTagFilter: (tag: string | null) => void;
+  setShowTrashed: (show: boolean) => void;
   incrementUsage: (id: string) => void;
   addAttachment: (itemId: string, attachment: Omit<Attachment, 'id' | 'createdAt'>) => void;
   removeAttachment: (itemId: string, attachmentId: string) => void;
@@ -1625,6 +1632,7 @@ const useStore = create<StoreState>()((set, get) => ({
     itemTypeFilter: null,
     tagFilter: null,
     selectedItemIds: [],
+    showTrashed: false,
 
     addItem: (item) => {
       const now = new Date().toISOString();
@@ -1679,9 +1687,51 @@ const useStore = create<StoreState>()((set, get) => ({
     },
 
     deleteItem: (id) => {
+      const now = new Date().toISOString();
       set((state) => {
         const item = state.items.list.find((i) => i.id === id);
-        const updatedVaultList = item
+        const updatedVaultList = item && !item.trashedAt
+          ? state.vaults.list.map((v) =>
+              v.id === item.vaultId ? { ...v, itemCount: Math.max(0, v.itemCount - 1) } : v,
+            )
+          : state.vaults.list;
+        return {
+          items: {
+            ...state.items,
+            list: state.items.list.map((i) =>
+              i.id === id ? { ...i, trashedAt: now, updatedAt: now } : i,
+            ),
+          },
+          vaults: { ...state.vaults, list: updatedVaultList },
+        };
+      });
+    },
+
+    restoreItem: (id) => {
+      const now = new Date().toISOString();
+      set((state) => {
+        const item = state.items.list.find((i) => i.id === id);
+        const updatedVaultList = item && item.trashedAt
+          ? state.vaults.list.map((v) =>
+              v.id === item.vaultId ? { ...v, itemCount: v.itemCount + 1 } : v,
+            )
+          : state.vaults.list;
+        return {
+          items: {
+            ...state.items,
+            list: state.items.list.map((i) =>
+              i.id === id ? { ...i, trashedAt: undefined, updatedAt: now } : i,
+            ),
+          },
+          vaults: { ...state.vaults, list: updatedVaultList },
+        };
+      });
+    },
+
+    permanentDeleteItem: (id) => {
+      set((state) => {
+        const item = state.items.list.find((i) => i.id === id);
+        const updatedVaultList = item && !item.trashedAt
           ? state.vaults.list.map((v) =>
               v.id === item.vaultId ? { ...v, itemCount: Math.max(0, v.itemCount - 1) } : v,
             )
@@ -1691,6 +1741,15 @@ const useStore = create<StoreState>()((set, get) => ({
           vaults: { ...state.vaults, list: updatedVaultList },
         };
       });
+    },
+
+    emptyTrash: () => {
+      set((state) => ({
+        items: {
+          ...state.items,
+          list: state.items.list.filter((i) => !i.trashedAt),
+        },
+      }));
     },
 
     toggleFavorite: (id) => {
@@ -1731,8 +1790,10 @@ const useStore = create<StoreState>()((set, get) => ({
     },
 
     selectAll: () => {
-      const currentVaultItems = get().items.list.filter(
-        (i) => i.vaultId === get().vaults.currentVaultId && !i.trashedAt
+      const { list, showTrashed } = get().items;
+      const currentVaultId = get().vaults.currentVaultId;
+      const currentVaultItems = list.filter(
+        (i) => i.vaultId === currentVaultId && (showTrashed ? !!i.trashedAt : !i.trashedAt),
       );
       set((state) => ({
         items: { ...state.items, selectedItemIds: currentVaultItems.map((i) => i.id) },
@@ -1746,13 +1807,74 @@ const useStore = create<StoreState>()((set, get) => ({
     deleteSelected: () => {
       const { selectedItemIds } = get().items;
       if (selectedItemIds.length === 0) return;
+      const now = new Date().toISOString();
 
       set((state) => {
-        const deletedItems = state.items.list.filter((i) => selectedItemIds.includes(i.id));
-        const vaultIds = new Set(deletedItems.map((i) => i.vaultId));
+        const itemsToDelete = state.items.list.filter(
+          (i) => selectedItemIds.includes(i.id) && !i.trashedAt,
+        );
+        const vaultIds = new Set(itemsToDelete.map((i) => i.vaultId));
         const updatedVaultList = state.vaults.list.map((v) =>
           vaultIds.has(v.id)
-            ? { ...v, itemCount: Math.max(0, v.itemCount - deletedItems.filter((i) => i.vaultId === v.id).length) }
+            ? { ...v, itemCount: Math.max(0, v.itemCount - itemsToDelete.filter((i) => i.vaultId === v.id).length) }
+            : v,
+        );
+        return {
+          items: {
+            ...state.items,
+            list: state.items.list.map((i) =>
+              selectedItemIds.includes(i.id)
+                ? { ...i, trashedAt: now, updatedAt: now }
+                : i,
+            ),
+            selectedItemIds: [],
+          },
+          vaults: { ...state.vaults, list: updatedVaultList },
+        };
+      });
+    },
+
+    restoreSelected: () => {
+      const { selectedItemIds } = get().items;
+      if (selectedItemIds.length === 0) return;
+      const now = new Date().toISOString();
+
+      set((state) => {
+        const itemsToRestore = state.items.list.filter(
+          (i) => selectedItemIds.includes(i.id) && i.trashedAt,
+        );
+        const vaultIds = new Set(itemsToRestore.map((i) => i.vaultId));
+        const updatedVaultList = state.vaults.list.map((v) =>
+          vaultIds.has(v.id)
+            ? { ...v, itemCount: v.itemCount + itemsToRestore.filter((i) => i.vaultId === v.id).length }
+            : v,
+        );
+        return {
+          items: {
+            ...state.items,
+            list: state.items.list.map((i) =>
+              selectedItemIds.includes(i.id)
+                ? { ...i, trashedAt: undefined, updatedAt: now }
+                : i,
+            ),
+            selectedItemIds: [],
+          },
+          vaults: { ...state.vaults, list: updatedVaultList },
+        };
+      });
+    },
+
+    permanentDeleteSelected: () => {
+      const { selectedItemIds } = get().items;
+      if (selectedItemIds.length === 0) return;
+
+      set((state) => {
+        const itemsToDelete = state.items.list.filter((i) => selectedItemIds.includes(i.id));
+        const nonTrashedItems = itemsToDelete.filter((i) => !i.trashedAt);
+        const vaultIds = new Set(nonTrashedItems.map((i) => i.vaultId));
+        const updatedVaultList = state.vaults.list.map((v) =>
+          vaultIds.has(v.id)
+            ? { ...v, itemCount: Math.max(0, v.itemCount - nonTrashedItems.filter((i) => i.vaultId === v.id).length) }
             : v,
         );
         return {
@@ -1815,6 +1937,12 @@ const useStore = create<StoreState>()((set, get) => ({
     setTagFilter: (tag) => {
       set((state) => ({
         items: { ...state.items, tagFilter: tag },
+      }));
+    },
+
+    setShowTrashed: (show) => {
+      set((state) => ({
+        items: { ...state.items, showTrashed: show },
       }));
     },
 

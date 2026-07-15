@@ -22,6 +22,7 @@ const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
 const AdminRedeemCodes = lazy(() => import("@/pages/AdminRedeemCodes"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const Notifications = lazy(() => import("@/pages/Notifications"));
+const Trash = lazy(() => import("@/pages/Trash"));
 const DocsHome = lazy(() => import("@/pages/docs/DocsHome"));
 const InstallationDoc = lazy(() => import("@/pages/docs/InstallationDoc"));
 const UsageDoc = lazy(() => import("@/pages/docs/UsageDoc"));
@@ -306,6 +307,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Notifications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trash"
+          element={
+            <ProtectedRoute>
+              <Trash />
             </ProtectedRoute>
           }
         />
