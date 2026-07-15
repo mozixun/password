@@ -18,6 +18,7 @@ const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminUsers = lazy(() => import("@/pages/AdminUsers"));
 const AdminLogs = lazy(() => import("@/pages/AdminLogs"));
 const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
+const AdminRedeemCodes = lazy(() => import("@/pages/AdminRedeemCodes"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const DocsHome = lazy(() => import("@/pages/docs/DocsHome"));
 const InstallationDoc = lazy(() => import("@/pages/docs/InstallationDoc"));
@@ -258,6 +259,14 @@ export default function App() {
           element={
             <AdminProtectedRoute>
               <AdminLogs />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/redeem-codes"
+          element={
+            <AdminProtectedRoute>
+              <AdminRedeemCodes />
             </AdminProtectedRoute>
           }
         />

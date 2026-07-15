@@ -5,6 +5,7 @@ import {
   Settings,
   Users,
   FileText,
+  Ticket,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ export default function AdminSidebar() {
   const navItems: NavItem[] = [
     { path: '/admin/dashboard', label: '仪表盘', icon: <LayoutDashboard size={18} /> },
     { path: '/admin/users', label: '用户管理', icon: <Users size={18} /> },
+    { path: '/admin/redeem-codes', label: '兑换码管理', icon: <Ticket size={18} /> },
     { path: '/admin/settings', label: '系统设置', icon: <Settings size={18} /> },
     { path: '/admin/logs', label: '操作日志', icon: <FileText size={18} /> },
   ];

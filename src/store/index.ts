@@ -18,6 +18,10 @@ import type {
   Attachment,
   ShareRecord,
   VaultKey as VaultKeyType,
+  Subscription,
+  RedeemCode,
+  Notification,
+  NotificationSettings,
 } from '@/types';
 import { checkEmailBreaches, checkPasswordLeak, type BreachResult } from '@/utils/breachDetection';
 import {
@@ -188,6 +192,25 @@ interface AdminState {
   addBlockedDomain: (domain: string) => void;
   removeBlockedDomain: (domain: string) => void;
   setMatchMode: (mode: 'exact' | 'fuzzy') => void;
+  generateRedeemCode: (planType: string, expiresDays: number, totalUses: number, customCode?: string) => RedeemCode;
+  toggleRedeemCode: (id: string) => void;
+  deleteRedeemCode: (id: string) => void;
+  updateNotificationConfig: (config: Partial<NotificationSettings>) => void;
+}
+
+interface NotificationState {
+  notifications: Notification[];
+  unreadCount: number;
+  addNotification: (notification: Omit<Notification, 'id' | 'createdAt'>) => void;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  clearNotification: (id: string) => void;
+  clearAll: () => void;
+}
+
+interface SubscriptionState {
+  subscription: Subscription;
+  applyRedeemCode: (code: string) => { success: boolean; message: string };
 }
 
 // ==================== 合并后的完整状态类型 ====================
@@ -203,6 +226,8 @@ interface StoreState {
   settings: SettingsState;
   profile: ProfileState;
   admin: AdminState;
+  notifications: NotificationState;
+  subscription: SubscriptionState;
 }
 
 // ==================== 模拟数据 ====================
@@ -798,12 +823,21 @@ const mockDevices: Device[] = [
   },
 ];
 
+// 模拟订阅数据
+const mockSubscription: Subscription = {
+  plan: 'premium',
+  startAt: '2024-01-15T08:00:00Z',
+  expiresAt: '2025-08-15T08:00:00Z',
+  source: 'direct',
+};
+
 // 模拟用户资料数据
 const mockProfile: UserProfile = {
   email: 'zhangsan@gmail.com',
   createdAt: '2024-01-15T08:00:00Z',
   plan: 'premium',
   avatarUrl: undefined,
+  subscription: mockSubscription,
 };
 
 // 模拟设置数据
@@ -849,7 +883,64 @@ const mockAdminSettings: AdminSettings = {
     blockedDomains: ['*.malware.com', '*.phishing-site.com'],
     matchMode: 'fuzzy',
   },
+  notificationConfig: {
+    smtpHost: 'smtp.example.com',
+    smtpPort: 587,
+    senderEmail: 'noreply@vaultkey.com',
+    senderName: 'VaultKey 系统通知',
+    enabled: false,
+  },
+  redeemCodes: [
+    {
+      id: 'redeem-1',
+      code: 'PREMIUM2024',
+      planType: 'premium',
+      totalUses: 10,
+      usedCount: 3,
+      expiresAt: '2025-12-31T23:59:59Z',
+      enabled: true,
+      createdAt: '2024-01-01T00:00:00Z',
+    },
+    {
+      id: 'redeem-2',
+      code: 'FAMILY2024',
+      planType: 'family',
+      totalUses: 5,
+      usedCount: 5,
+      expiresAt: '2025-06-01T00:00:00Z',
+      enabled: true,
+      createdAt: '2024-01-01T00:00:00Z',
+    },
+  ],
 };
+
+// 模拟通知数据
+const mockNotifications: Notification[] = [
+  {
+    id: 'notif-1',
+    type: 'subscription',
+    title: '订阅即将到期',
+    message: '您的 Premium 订阅将在 7 天后到期，请及时续费。',
+    read: false,
+    createdAt: '2025-07-08T10:00:00Z',
+  },
+  {
+    id: 'notif-2',
+    type: 'security',
+    title: '新设备登录提醒',
+    message: '检测到您的账户在新设备上登录，如非本人操作请立即修改密码。',
+    read: true,
+    createdAt: '2025-07-05T14:30:00Z',
+  },
+  {
+    id: 'notif-3',
+    type: 'system',
+    title: '系统维护通知',
+    message: 'VaultKey 将于本周日凌晨 2:00-4:00 进行系统维护，期间服务可能不可用。',
+    read: false,
+    createdAt: '2025-07-10T09:00:00Z',
+  },
+];
 
 // ==================== 密码生成工具函数 ====================
 
@@ -2369,6 +2460,217 @@ const useStore = create<StoreState>()((set, get) => ({
         },
       }));
     },
+
+    generateRedeemCode: (planType, expiresDays, totalUses, customCode) => {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + expiresDays * 24 * 60 * 60 * 1000).toISOString();
+      const code = customCode || Array.from({ length: 12 }, () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const arr = new Uint32Array(1);
+        crypto.getRandomValues(arr);
+        return chars[arr[0] % chars.length];
+      }).join('');
+      const newCode: RedeemCode = {
+        id: `redeem-${Date.now()}`,
+        code,
+        planType: planType as Subscription['plan'],
+        totalUses,
+        usedCount: 0,
+        expiresAt,
+        enabled: true,
+        createdAt: now.toISOString(),
+      };
+      set((state) => ({
+        admin: {
+          ...state.admin,
+          settings: {
+            ...state.admin.settings,
+            redeemCodes: [...state.admin.settings.redeemCodes, newCode],
+          },
+        },
+      }));
+      return newCode;
+    },
+
+    toggleRedeemCode: (id) => {
+      set((state) => ({
+        admin: {
+          ...state.admin,
+          settings: {
+            ...state.admin.settings,
+            redeemCodes: state.admin.settings.redeemCodes.map((rc) =>
+              rc.id === id ? { ...rc, enabled: !rc.enabled } : rc
+            ),
+          },
+        },
+      }));
+    },
+
+    deleteRedeemCode: (id) => {
+      set((state) => ({
+        admin: {
+          ...state.admin,
+          settings: {
+            ...state.admin.settings,
+            redeemCodes: state.admin.settings.redeemCodes.filter((rc) => rc.id !== id),
+          },
+        },
+      }));
+    },
+
+    updateNotificationConfig: (config) => {
+      set((state) => ({
+        admin: {
+          ...state.admin,
+          settings: {
+            ...state.admin.settings,
+            notificationConfig: { ...state.admin.settings.notificationConfig, ...config },
+          },
+        },
+      }));
+    },
+  },
+
+  // ---------- 通知切片 ----------
+  notifications: {
+    notifications: mockNotifications,
+    unreadCount: mockNotifications.filter((n) => !n.read).length,
+
+    addNotification: (notification) => {
+      const now = new Date().toISOString();
+      const newNotification: Notification = {
+        ...notification,
+        id: `notif-${Date.now()}`,
+        createdAt: now,
+      };
+      set((state) => ({
+        notifications: {
+          ...state.notifications,
+          notifications: [newNotification, ...state.notifications.notifications],
+          unreadCount: state.notifications.unreadCount + 1,
+        },
+      }));
+    },
+
+    markAsRead: (id) => {
+      set((state) => {
+        const notification = state.notifications.notifications.find((n) => n.id === id);
+        if (!notification || notification.read) return state;
+        return {
+          notifications: {
+            ...state.notifications,
+            notifications: state.notifications.notifications.map((n) =>
+              n.id === id ? { ...n, read: true } : n
+            ),
+            unreadCount: Math.max(0, state.notifications.unreadCount - 1),
+          },
+        };
+      });
+    },
+
+    markAllAsRead: () => {
+      set((state) => ({
+        notifications: {
+          ...state.notifications,
+          notifications: state.notifications.notifications.map((n) => ({ ...n, read: true })),
+          unreadCount: 0,
+        },
+      }));
+    },
+
+    clearNotification: (id) => {
+      set((state) => {
+        const notification = state.notifications.notifications.find((n) => n.id === id);
+        const wasUnread = notification && !notification.read;
+        return {
+          notifications: {
+            ...state.notifications,
+            notifications: state.notifications.notifications.filter((n) => n.id !== id),
+            unreadCount: wasUnread
+              ? Math.max(0, state.notifications.unreadCount - 1)
+              : state.notifications.unreadCount,
+          },
+        };
+      });
+    },
+
+    clearAll: () => {
+      set((state) => ({
+        notifications: {
+          ...state.notifications,
+          notifications: [],
+          unreadCount: 0,
+        },
+      }));
+    },
+  },
+
+  // ---------- 订阅切片 ----------
+  subscription: {
+    subscription: mockSubscription,
+
+    applyRedeemCode: (code) => {
+      const state = get();
+      const redeemCode = state.admin.settings.redeemCodes.find(
+        (rc) => rc.code.toUpperCase() === code.trim().toUpperCase()
+      );
+
+      if (!redeemCode) {
+        return { success: false, message: '兑换码不存在' };
+      }
+
+      if (!redeemCode.enabled) {
+        return { success: false, message: '兑换码已被禁用' };
+      }
+
+      const now = new Date();
+      if (new Date(redeemCode.expiresAt) < now) {
+        return { success: false, message: '兑换码已过期' };
+      }
+
+      if (redeemCode.usedCount >= redeemCode.totalUses) {
+        return { success: false, message: '兑换码使用次数已达上限' };
+      }
+
+      // 更新兑换码使用次数
+      const updatedRedeemCodes = state.admin.settings.redeemCodes.map((rc) =>
+        rc.id === redeemCode.id ? { ...rc, usedCount: rc.usedCount + 1 } : rc
+      );
+
+      // 更新用户订阅
+      const expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString();
+      const newSubscription: Subscription = {
+        plan: redeemCode.planType,
+        startAt: now.toISOString(),
+        expiresAt,
+        source: 'redeemed',
+        redeemCodeId: redeemCode.id,
+      };
+
+      set((state) => ({
+        admin: {
+          ...state.admin,
+          settings: {
+            ...state.admin.settings,
+            redeemCodes: updatedRedeemCodes,
+          },
+        },
+        subscription: {
+          ...state.subscription,
+          subscription: newSubscription,
+        },
+        profile: {
+          ...state.profile,
+          profile: {
+            ...state.profile.profile,
+            plan: redeemCode.planType,
+            subscription: newSubscription,
+          },
+        },
+      }));
+
+      return { success: true, message: `兑换成功！已升级至 ${redeemCode.planType} 计划` };
+    },
   },
 }));
 
@@ -2413,6 +2715,14 @@ export const useProfile = () =>
 /** 管理员设置状态选择器 */
 export const useAdmin = () =>
   useStore((state) => state.admin);
+
+/** 通知状态选择器 */
+export const useNotifications = () =>
+  useStore((state) => state.notifications);
+
+/** 订阅状态选择器 */
+export const useSubscription = () =>
+  useStore((state) => state.subscription);
 
 // 同时提供命名导出和默认导出，兼容不同导入方式
 export { useStore };

@@ -242,11 +242,50 @@ export interface Device {
   isCurrent: boolean;
 }
 
+export type SubscriptionPlan = 'free' | 'premium' | 'family' | 'team';
+
+export interface Subscription {
+  plan: SubscriptionPlan;
+  startAt: string;
+  expiresAt: string | null;
+  source: 'direct' | 'redeemed';
+  redeemCodeId?: string;
+}
+
+export interface RedeemCode {
+  id: string;
+  code: string;
+  planType: SubscriptionPlan;
+  totalUses: number;
+  usedCount: number;
+  expiresAt: string;
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface Notification {
+  id: string;
+  type: 'subscription' | 'security' | 'system';
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationSettings {
+  smtpHost: string;
+  smtpPort: number;
+  senderEmail: string;
+  senderName: string;
+  enabled: boolean;
+}
+
 export interface UserProfile {
   email: string;
   createdAt: string;
-  plan: 'free' | 'premium' | 'family' | 'team';
+  plan: SubscriptionPlan;
   avatarUrl?: string;
+  subscription: Subscription;
 }
 
 export interface RecoveryKey {
@@ -311,6 +350,8 @@ export interface TrustedDevice {
 export interface AdminSettings {
   siteInfo: SiteInfo;
   domainConfig: DomainConfig;
+  notificationConfig: NotificationSettings;
+  redeemCodes: RedeemCode[];
 }
 
 export interface EncryptedData {
