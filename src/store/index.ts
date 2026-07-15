@@ -55,7 +55,7 @@ interface AuthState {
   lastActivityTime: number;
   trustedDeviceId: string | null;
   login: (email: string, password: string, rememberDevice?: boolean) => Promise<void>;
-  register: (email: string, password: string, rememberDevice?: boolean) => Promise<{ success: boolean; secureKey?: string }>;
+  register: (email: string, password: string, rememberDevice?: boolean) => Promise<{ success: boolean; secureKey?: string; message?: string }>;
   logout: () => void;
   lock: () => void;
   unlock: (password: string) => Promise<boolean>;
@@ -1138,6 +1138,25 @@ const useStore = create<StoreState>()((set, get) => ({
       const now = Date.now();
       let deviceId: string | null = null;
 
+      try {
+        const apiResponse = await fetch('http://localhost:3001/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const apiData = await apiResponse.json();
+
+        if (!apiData.success) {
+          const error = new Error(apiData.message || '登录失败');
+          (error as any).remaining = apiData.remaining;
+          throw error;
+        }
+
+        localStorage.setItem('vaultkey-api-token', apiData.token);
+      } catch (apiError) {
+        console.warn('API login failed, using local fallback:', apiError);
+      }
+
       const storedKeyData = localStorage.getItem('vaultkey-local-keys');
       if (!storedKeyData) {
         throw new Error('No local key data found');
@@ -1207,6 +1226,23 @@ const useStore = create<StoreState>()((set, get) => ({
       const now = Date.now();
       let deviceId: string | null = null;
 
+      try {
+        const apiResponse = await fetch('http://localhost:3001/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const apiData = await apiResponse.json();
+
+        if (!apiData.success) {
+          return { success: false, message: apiData.message };
+        }
+
+        localStorage.setItem('vaultkey-api-token', apiData.token);
+      } catch (apiError) {
+        console.warn('API registration failed, using local fallback:', apiError);
+      }
+
       if (rememberDevice) {
         deviceId = generateDeviceId();
         const trustedDeviceData = {
@@ -1260,6 +1296,7 @@ const useStore = create<StoreState>()((set, get) => ({
     logout: () => {
       try {
         localStorage.removeItem('vaultkey-trusted-device');
+        localStorage.removeItem('vaultkey-api-token');
       } catch (error) {
         console.warn('localStorage operation failed:', error);
       }

@@ -1,21 +1,34 @@
 // VaultKey 密码管理器 - 登录/注册页面
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Shield, Eye, EyeOff, Mail, Lock, ArrowRight, KeyRound, Fingerprint, Smartphone, Monitor, BookOpen } from 'lucide-react';
+import { Shield, Eye, EyeOff, Mail, Lock, ArrowRight, KeyRound, Fingerprint, Smartphone, Monitor, BookOpen, Loader2 } from 'lucide-react';
 import useStore from '@/store';
 
 // 登录/注册表单类型
 type AuthTab = 'login' | 'register' | 'recovery';
 
+// 密码强度检测
+function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[a-z]/.test(password)) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+  if (score <= 2) return { score, label: '弱', color: 'bg-vault-warn' };
+  if (score <= 4) return { score, label: '中等', color: 'bg-vault-warning' };
+  return { score, label: '强', color: 'bg-vault-success' };
+}
+
 // 检测生物识别支持
 function getBiometricType(): 'touchId' | 'faceId' | 'windowsHello' | null {
-  // 检测平台
   const platform = navigator.platform.toLowerCase();
   const isMac = platform.includes('mac');
   const isWindows = platform.includes('win');
   const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
   
-  // 检测 WebAuthn 支持
   if (!window.PublicKeyCredential) return null;
   
   if (isMac) return 'touchId';
@@ -40,6 +53,8 @@ export default function Login() {
   const [recoveryKey, setRecoveryKey] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [biometricType] = useState(getBiometricType());
+  const [isLoading, setIsLoading] = useState(false);
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
 
   // 入场动画
   useEffect(() => {
@@ -56,16 +71,26 @@ export default function Login() {
       setError('请输入邮箱地址');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('请输入有效的邮箱地址');
+      return;
+    }
     if (!password) {
       setError('请输入主密码');
       return;
     }
 
+    setIsLoading(true);
     try {
       await auth.login(email, password, rememberDevice);
       navigate('/dashboard');
-    } catch {
-      setError('登录失败：邮箱或密码错误');
+    } catch (err: any) {
+      setError(err?.message || '登录失败：邮箱或密码错误');
+      if (err?.remaining !== undefined) {
+        setRemainingAttempts(err.remaining);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,6 +101,10 @@ export default function Login() {
 
     if (!email.trim()) {
       setError('请输入邮箱地址');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('请输入有效的邮箱地址');
       return;
     }
     if (!password) {
@@ -91,15 +120,18 @@ export default function Login() {
       return;
     }
 
+    setIsLoading(true);
     try {
       const result = await auth.register(email, password, rememberDevice);
       if (result.success) {
         navigate('/dashboard');
       } else {
-        setError('注册失败：该邮箱已被注册');
+        setError(result.message || '注册失败：该邮箱已被注册');
       }
     } catch {
       setError('注册失败，请稍后重试');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -217,11 +249,27 @@ export default function Login() {
               {/* 登录按钮 */}
               <button
                 type="submit"
-                className="vault-btn-primary w-full flex items-center justify-center gap-2 py-3 text-base"
+                disabled={isLoading}
+                className="vault-btn-primary w-full flex items-center justify-center gap-2 py-3 text-base disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                解锁保管库
-                <ArrowRight className="w-4 h-4" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    登录中...
+                  </>
+                ) : (
+                  <>
+                    解锁保管库
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
+
+              {remainingAttempts !== null && remainingAttempts > 0 && (
+                <p className="text-xs text-vault-text-muted text-center">
+                  还剩 {remainingAttempts} 次尝试机会
+                </p>
+              )}
             </form>
           )}
 
@@ -281,6 +329,30 @@ export default function Login() {
                 </button>
               </div>
 
+              {/* 密码强度指示器 */}
+              {password && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-vault-text-muted">密码强度</span>
+                    <span className="text-xs font-medium" style={{ color: getPasswordStrength(password).label === '弱' ? '#ef4444' : getPasswordStrength(password).label === '中等' ? '#f59e0b' : '#22c55e' }}>
+                      {getPasswordStrength(password).label}
+                    </span>
+                  </div>
+                  <div className="flex gap-1 h-1.5">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div
+                        key={i}
+                        className={`flex-1 rounded-full transition-colors ${
+                          i <= getPasswordStrength(password).score
+                            ? getPasswordStrength(password).color
+                            : 'bg-vault-border'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* 记住设备 */}
               <div className="flex items-center gap-2">
                 <input
@@ -298,10 +370,20 @@ export default function Login() {
               {/* 注册按钮 */}
               <button
                 type="submit"
-                className="vault-btn-primary w-full flex items-center justify-center gap-2 py-3 text-base"
+                disabled={isLoading}
+                className="vault-btn-primary w-full flex items-center justify-center gap-2 py-3 text-base disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                创建账户
-                <ArrowRight className="w-4 h-4" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    创建中...
+                  </>
+                ) : (
+                  <>
+                    创建账户
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </form>
           )}

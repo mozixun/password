@@ -249,6 +249,20 @@ export default function Items() {
     return result;
   }, [vaultItems, activeTypeFilter, selectedFolderId, searchQuery, showFavoritesOnly, tagFilter, sortBy]);
 
+  // 分页状态
+  const PAGE_SIZE = 50;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // 分页后的数据
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    return filteredItems.slice(start, end);
+  }, [filteredItems, currentPage]);
+
+  // 总页数
+  const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE);
+
   // ==================== 事件处理 ====================
 
   // 切换类型筛选
@@ -307,19 +321,20 @@ export default function Items() {
     if (!customSortEnabled || !draggedItemId) return;
     e.preventDefault();
     
-    const itemIds = filteredItems.map((item) => item.id);
-    const sourceIndex = itemIds.indexOf(draggedItemId);
-    if (sourceIndex === -1 || sourceIndex === targetIndex) {
+    const sourceIndex = filteredItems.findIndex((item) => item.id === draggedItemId);
+    if (sourceIndex === -1) {
       setDraggedItemId(null);
       setIsDragging(false);
       setDragOverIndex(null);
       return;
     }
 
-    const newIds = [...itemIds];
-    newIds.splice(sourceIndex, 1);
-    newIds.splice(targetIndex, 0, draggedItemId);
-    reorderItems(newIds);
+    const newList = [...filteredItems];
+    newList.splice(sourceIndex, 1);
+    const adjustedTargetIndex = targetIndex < sourceIndex ? targetIndex : targetIndex;
+    newList.splice(adjustedTargetIndex, 0, draggedItemId as unknown as VaultItem);
+    
+    reorderItems(newList.map((item) => item.id));
 
     setDraggedItemId(null);
     setIsDragging(false);
@@ -1012,7 +1027,7 @@ export default function Items() {
             renderEmpty()
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {filteredItems.map((item) => (
+              {paginatedItems.map((item) => (
                 <ItemCard
                   key={item.id}
                   item={item}
@@ -1022,9 +1037,50 @@ export default function Items() {
             </div>
           ) : (
             <div className="space-y-1">
-              {filteredItems.map((item, index) => renderListItem(item, index))}
+              {paginatedItems.map((item, index) => renderListItem(item, index))}
             </div>
           )}
+
+        {/* 分页控件 */}
+        {filteredItems.length > PAGE_SIZE && (
+          <div className="flex items-center justify-center gap-2 mt-6">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded-lg text-vault-text-muted hover:text-vault-text hover:bg-vault-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronDown size={14} className="rotate-90" />
+            </button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = i + Math.max(1, currentPage - 2);
+              if (pageNum > totalPages) return null;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={cn(
+                    'px-2.5 py-1 text-xs rounded-lg transition-colors',
+                    currentPage === pageNum
+                      ? 'bg-vault-accent text-vault-bg'
+                      : 'text-vault-text-muted hover:text-vault-text hover:bg-vault-hover'
+                  )}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1.5 rounded-lg text-vault-text-muted hover:text-vault-text hover:bg-vault-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronDown size={14} className="-rotate-90" />
+            </button>
+            <span className="text-xs text-vault-text-muted ml-2">
+              显示 {(currentPage - 1) * PAGE_SIZE + 1} - {Math.min(currentPage * PAGE_SIZE, filteredItems.length)} / {filteredItems.length}
+            </span>
+          </div>
+        )}
         </div>
 
         {/* 标签侧边栏 */}
