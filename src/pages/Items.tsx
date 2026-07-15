@@ -522,7 +522,6 @@ export default function Items() {
 
     return (
       <div
-        key={item.id}
         className="vault-card flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-vault-hover/50 transition-colors"
         onClick={() => {
           if (!isLongPress) navigate(`/items/detail/${item.id}`);

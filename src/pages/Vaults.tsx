@@ -347,7 +347,7 @@ export default function Vaults() {
                       {vault.name}
                     </h3>
                     {/* 更多操作按钮 */}
-                    <div className="relative" ref={openMenuId === vault.id ? menuRef : undefined}>
+                    <div className="relative" ref={menuRef}>
                       <button
                         className="p-1.5 rounded-lg text-vault-text-muted hover:text-vault-text hover:bg-vault-hover transition-colors opacity-0 group-hover:opacity-100"
                         onClick={() => setOpenMenuId(openMenuId === vault.id ? null : vault.id)}

@@ -178,8 +178,19 @@ export default function Generator() {
 
   // 生成密码短语
   const generatePassphraseLocal = useCallback(() => {
+    const getRandomValues = (arr: Uint32Array) => {
+      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        return crypto.getRandomValues(arr);
+      }
+      // 降级方案：使用 Math.random（仅用于开发/测试环境）
+      for (let i = 0; i < arr.length; i++) {
+        arr[i] = Math.floor(Math.random() * 0x100000000);
+      }
+      return arr;
+    };
+
     const array = new Uint32Array(wordCount);
-    crypto.getRandomValues(array);
+    getRandomValues(array);
     let words = Array.from(array, (v) => PASSPHRASE_WORDS[v % PASSPHRASE_WORDS.length]);
 
     if (capitalize) {
@@ -187,7 +198,7 @@ export default function Generator() {
     }
     if (includeNumbers) {
       const numArray = new Uint32Array(1);
-      crypto.getRandomValues(numArray);
+      getRandomValues(numArray);
       words[words.length - 1] += String(numArray[0] % 100);
     }
 

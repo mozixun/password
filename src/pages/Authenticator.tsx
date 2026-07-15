@@ -162,7 +162,7 @@ export default function Authenticator() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {displayedItems.map((item) => {
                 const [code1, code2] = formatCode(item.currentCode);
-                const progress = ((item.totpConfig.period - item.remainingSeconds) / item.totpConfig.period) * 100;
+                const progress = Math.max(0, Math.min(100, ((item.totpConfig.period - item.remainingSeconds) / item.totpConfig.period) * 100));
                 const isExpiring = item.remainingSeconds <= 5;
 
                 return (

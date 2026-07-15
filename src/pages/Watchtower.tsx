@@ -153,7 +153,8 @@ export default function Watchtower() {
       const results = await checkEmailBreaches(profile.profile.email);
       setBreachResults(results);
     } catch {
-      // 静默处理泄露检测失败
+      setBreachResults([]);
+      alert('泄露检测服务暂时不可用，请检查网络连接后重试');
     } finally {
       setIsCheckingBreaches(false);
     }

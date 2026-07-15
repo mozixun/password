@@ -629,8 +629,10 @@ export default function ItemDetail() {
   // 删除条目（移至回收站）
   const handleDelete = useCallback(() => {
     if (existingItem) {
-      items.deleteItem(existingItem.id);
-      navigate('/items');
+      if (window.confirm(`确定要将 "${existingItem.title}" 移至回收站吗？`)) {
+        items.deleteItem(existingItem.id);
+        navigate('/items');
+      }
     }
   }, [existingItem, items, navigate]);
 

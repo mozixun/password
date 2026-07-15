@@ -90,7 +90,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {/* 右侧操作按钮 */}
           <div className="ml-auto flex items-center gap-2">
             {/* 通知 */}
-            <button className="p-2 rounded-lg text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors">
+            <button
+              className="p-2 rounded-lg text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors relative"
+              onClick={() => navigate('/notifications')}
+            >
               <Bell size={18} />
             </button>
 
