@@ -37,6 +37,7 @@ import {
   bytesToBase64,
   bytesToHex,
   base64ToBytes,
+  getRandomValues,
 } from '@/utils/crypto';
 
 // ==================== 各切片状态接口定义 ====================
@@ -967,7 +968,7 @@ function generateRandomPassword(
 
   let password = '';
   const array = new Uint32Array(length);
-  crypto.getRandomValues(array);
+  getRandomValues(array);
   
   for (let i = 0; i < length; i++) {
     let charIndex = array[i] % chars.length;
@@ -1001,7 +1002,7 @@ function generatePassphrase(): string {
     '骏马', '飞鹰', '锦鲤', '白鹤', '青鸾', '灵鹿', '雪豹', '云雀',
   ];
   const array = new Uint32Array(4);
-  crypto.getRandomValues(array);
+  getRandomValues(array);
   return Array.from(array, (v) => words[v % words.length]).join('-');
 }
 
@@ -2343,7 +2344,7 @@ const useStore = create<StoreState>()((set, get) => ({
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       const key = Array.from({ length: 8 }, () => {
         const arr = new Uint32Array(5);
-        crypto.getRandomValues(arr);
+        getRandomValues(arr);
         return Array.from(arr, (v) => chars[v % chars.length]).join('');
       }).join('-');
       const newKey: RecoveryKey = {
@@ -2463,7 +2464,7 @@ const useStore = create<StoreState>()((set, get) => ({
       const code = customCode || Array.from({ length: 12 }, () => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         const arr = new Uint32Array(1);
-        crypto.getRandomValues(arr);
+        getRandomValues(arr);
         return chars[arr[0] % chars.length];
       }).join('');
       const newCode: RedeemCode = {

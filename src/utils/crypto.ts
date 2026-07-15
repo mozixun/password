@@ -7,6 +7,16 @@ const AES_TAG_LENGTH = 16;
 const SECURE_KEY_LENGTH = 16;
 const RSA_KEY_SIZE = 2048;
 
+export function getRandomValues<T extends Uint8Array | Uint16Array | Uint32Array | Int8Array | Int16Array | Int32Array | Float32Array | Float64Array>(arr: T): T {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    return crypto.getRandomValues(arr);
+  }
+  for (let i = 0; i < arr.length; i++) {
+    arr[i] = Math.floor(Math.random() * 0x100000000) as T[number];
+  }
+  return arr;
+}
+
 export interface EncryptedData {
   version: number;
   iv: string;
@@ -102,7 +112,7 @@ function base32ToBytes(base32: string): Uint8Array {
 
 export function generateSecureKey(): SecureKey {
   const raw = new Uint8Array(SECURE_KEY_LENGTH);
-  crypto.getRandomValues(raw);
+  getRandomValues(raw);
   return {
     raw,
     base32: bytesToBase32(raw),
@@ -126,7 +136,7 @@ export async function generateSaltA(email: string): Promise<Uint8Array> {
 
 export async function generateSaltB(): Promise<Uint8Array> {
   const salt = new Uint8Array(16);
-  crypto.getRandomValues(salt);
+  getRandomValues(salt);
   return salt;
 }
 
@@ -207,7 +217,7 @@ export async function encryptAESGCM(
   key: Uint8Array
 ): Promise<EncryptedData> {
   const iv = new Uint8Array(AES_IV_LENGTH);
-  crypto.getRandomValues(iv);
+  getRandomValues(iv);
 
   const aesKey = await crypto.subtle.importKey(
     'raw',
@@ -358,14 +368,14 @@ export async function hashSHA256(data: string): Promise<string> {
 
 export function generateRecoveryCode(): string {
   const code = new Uint8Array(16);
-  crypto.getRandomValues(code);
+  getRandomValues(code);
   const hex = bytesToHex(code);
   return hex.match(/.{1,4}/g)?.join('-') || hex;
 }
 
 export function generateDeviceId(): string {
   const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
+  getRandomValues(bytes);
   return bytesToHex(bytes);
 }
 

@@ -220,7 +220,10 @@ export default function Vaults() {
 
   // 删除保管库
   const handleDeleteVault = (vaultId: string) => {
-    vaults.deleteVault(vaultId);
+    const vault = vaults.list.find((v) => v.id === vaultId);
+    if (vault && window.confirm(`确定要删除保管库 "${vault.name}" 吗？此操作不可撤销，该保管库中的所有项目都将被删除。`)) {
+      vaults.deleteVault(vaultId);
+    }
     setOpenMenuId(null);
   };
 

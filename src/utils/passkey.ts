@@ -4,6 +4,7 @@
  */
 
 import type { PasskeyConfig } from '@/types';
+import { getRandomValues } from './crypto';
 
 /**
  * 创建新的通行密钥（注册流程）
@@ -24,11 +25,11 @@ export async function createPasskey(
         name: rpName,
       },
       user: {
-        id: crypto.getRandomValues(new Uint8Array(16)),
+        id: getRandomValues(new Uint8Array(16)),
         name: userName,
         displayName: userName,
       },
-      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      challenge: getRandomValues(new Uint8Array(32)),
       pubKeyCredParams: [
         { type: 'public-key', alg: -7 },
         { type: 'public-key', alg: -257 },
@@ -86,7 +87,7 @@ export async function authenticateWithPasskey(
 ): Promise<{ success: boolean; signCount: number }> {
   try {
     const publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions = {
-      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      challenge: getRandomValues(new Uint8Array(32)),
       rpId,
       allowCredentials: [
         {
@@ -177,13 +178,13 @@ export function validatePasskeyConfig(config: Partial<PasskeyConfig>): boolean {
 function generateMockPasskey(rpId: string, _userName: string): PasskeyConfig {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
   const credIdArr = new Uint32Array(32);
-  crypto.getRandomValues(credIdArr);
+  getRandomValues(credIdArr);
   const credentialId = Array.from(credIdArr, (v) => chars[v % chars.length]).join('');
   const pubKeyArr = new Uint32Array(40);
-  crypto.getRandomValues(pubKeyArr);
+  getRandomValues(pubKeyArr);
   const publicKey = 'pQECAzYgASFY' + Array.from(pubKeyArr, (v) => chars[v % chars.length]).join('');
   const flagsArr = new Uint32Array(3);
-  crypto.getRandomValues(flagsArr);
+  getRandomValues(flagsArr);
 
   return {
     credentialId,
