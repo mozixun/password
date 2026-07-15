@@ -103,6 +103,7 @@ export interface VaultItem {
   tags: string[];
   folderId?: string;         // 所属文件夹
   isPinned?: boolean;         // 是否置顶
+  sortOrder?: number;         // 自定义排序顺序
   usageCount?: number;        // 使用次数
   lastUsedAt?: string;       // 最后使用时间
   createdAt: string;

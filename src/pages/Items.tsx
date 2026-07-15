@@ -1,5 +1,5 @@
 // VaultKey 密码管理器 - 项目列表页面
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Plus,
@@ -28,6 +28,7 @@ import {
   ChevronUp,
   ExternalLink,
   Copy,
+  GripVertical,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import ItemCard from '@/components/ItemCard';
@@ -88,6 +89,7 @@ const sortOptions = [
   { key: 'recent', label: '最近修改' },
   { key: 'title-asc', label: '标题 A-Z' },
   { key: 'oldest', label: '最早创建' },
+  { key: 'custom', label: '自定义排序' },
 ] as const;
 
 // 类型对应的图标
@@ -116,7 +118,7 @@ export default function Items() {
   const { type: typePath } = useParams<{ type?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const { list: items, searchQuery, setSearchQuery, setItemTypeFilter, setTagFilter, tagFilter, selectAll, clearSelection, deleteSelected, moveSelected, exportSelected, selectedItemIds, toggleFavorite, deleteItem, incrementUsage } = useItems();
+  const { list: items, searchQuery, setSearchQuery, setItemTypeFilter, setTagFilter, tagFilter, selectAll, clearSelection, deleteSelected, moveSelected, exportSelected, selectedItemIds, toggleFavorite, deleteItem, incrementUsage, reorderItems } = useItems();
   const { list: vaults, currentVaultId, setCurrentVault } = useVaults();
   const { list: folders } = useFolders();
 
@@ -144,6 +146,12 @@ export default function Items() {
   const [showMoveDropdown, setShowMoveDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+
+  // 拖拽排序状态
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [customSortEnabled, setCustomSortEnabled] = useState(false);
 
   // 右键菜单状态
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -222,6 +230,11 @@ export default function Items() {
     // 排序
     result = [...result].sort((a, b) => {
       switch (sortBy) {
+        case 'custom':
+          const sortA = a.sortOrder ?? Number.MAX_SAFE_INTEGER;
+          const sortB = b.sortOrder ?? Number.MAX_SAFE_INTEGER;
+          if (sortA !== sortB) return sortA - sortB;
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
         case 'recent':
           return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
         case 'title-asc':
@@ -266,8 +279,52 @@ export default function Items() {
   // 切换排序
   const handleSort = useCallback((key: string) => {
     setSortBy(key);
+    setCustomSortEnabled(key === 'custom');
     setShowSortDropdown(false);
   }, []);
+
+  // 拖拽排序处理
+  const handleDragStart = useCallback((e: React.DragEvent, itemId: string, index: number) => {
+    if (!customSortEnabled) return;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', itemId);
+    setDraggedItemId(itemId);
+    setIsDragging(true);
+  }, [customSortEnabled]);
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    if (!customSortEnabled) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  }, [customSortEnabled]);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverIndex(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, targetIndex: number) => {
+    if (!customSortEnabled || !draggedItemId) return;
+    e.preventDefault();
+    
+    const itemIds = filteredItems.map((item) => item.id);
+    const sourceIndex = itemIds.indexOf(draggedItemId);
+    if (sourceIndex === -1 || sourceIndex === targetIndex) {
+      setDraggedItemId(null);
+      setIsDragging(false);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newIds = [...itemIds];
+    newIds.splice(sourceIndex, 1);
+    newIds.splice(targetIndex, 0, draggedItemId);
+    reorderItems(newIds);
+
+    setDraggedItemId(null);
+    setIsDragging(false);
+    setDragOverIndex(null);
+  }, [customSortEnabled, draggedItemId, filteredItems, reorderItems]);
 
   // 切换保险库
   const handleVaultChange = useCallback(
@@ -500,7 +557,7 @@ export default function Items() {
 
   // ==================== 列表视图渲染 ====================
 
-  const ListItem = ({ item, onContextMenu }: { item: typeof filteredItems[number]; onContextMenu: (e: React.MouseEvent | React.TouchEvent, item: typeof filteredItems[number]) => void }) => {
+  const ListItem = ({ item, onContextMenu, index, onDragStart, onDragOver, onDragLeave, onDrop, isDragging, dragOverIndex, customSortEnabled }: { item: typeof filteredItems[number]; onContextMenu: (e: React.MouseEvent | React.TouchEvent, item: typeof filteredItems[number]) => void; index: number; onDragStart: (e: React.DragEvent, itemId: string, index: number) => void; onDragOver: (e: React.DragEvent, index: number) => void; onDragLeave: () => void; onDrop: (e: React.DragEvent, index: number) => void; isDragging: boolean; dragOverIndex: number | null; customSortEnabled: boolean }) => {
     const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
     const [isLongPress, setIsLongPress] = useState(false);
 
@@ -525,9 +582,16 @@ export default function Items() {
       onContextMenu(e, item);
     };
 
+    const isDragOver = dragOverIndex === index;
+    const isDragged = isDragging && draggedItemId === item.id;
+
     return (
       <div
-        className="vault-card flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-vault-hover/50 transition-colors"
+        className={cn(
+          'vault-card flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors',
+          isDragOver ? 'ring-2 ring-vault-accent ring-offset-2' : 'hover:bg-vault-hover/50',
+          isDragged && 'opacity-50',
+        )}
         onClick={() => {
           if (!isLongPress) navigate(`/items/detail/${item.id}`);
         }}
@@ -535,7 +599,19 @@ export default function Items() {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
+        draggable={customSortEnabled}
+        onDragStart={(e) => onDragStart(e, item.id, index)}
+        onDragOver={(e) => onDragOver(e, index)}
+        onDragLeave={onDragLeave}
+        onDrop={(e) => onDrop(e, index)}
       >
+        {/* 拖拽手柄 */}
+        {customSortEnabled && (
+          <div className="p-1.5 text-vault-text-muted hover:text-vault-text cursor-grab active:cursor-grabbing transition-colors shrink-0">
+            <GripVertical size={14} />
+          </div>
+        )}
+
         {/* 图标 */}
         <div className="w-8 h-8 rounded-lg bg-vault-accent/15 text-vault-accent flex items-center justify-center shrink-0">
           {getItemTypeIcon(item.type)}
@@ -573,7 +649,21 @@ export default function Items() {
     );
   };
 
-  const renderListItem = (item: typeof filteredItems[number]) => <ListItem item={item} onContextMenu={handleContextMenu} />;
+  const renderListItem = (item: typeof filteredItems[number], index: number) => (
+    <ListItem
+      key={item.id}
+      item={item}
+      index={index}
+      onContextMenu={handleContextMenu}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      isDragging={isDragging}
+      dragOverIndex={dragOverIndex}
+      customSortEnabled={customSortEnabled}
+    />
+  );
 
   // ==================== 页面渲染 ====================
 
@@ -932,7 +1022,7 @@ export default function Items() {
             </div>
           ) : (
             <div className="space-y-1">
-              {filteredItems.map((item) => renderListItem(item))}
+              {filteredItems.map((item, index) => renderListItem(item, index))}
             </div>
           )}
         </div>

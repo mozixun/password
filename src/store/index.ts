@@ -115,6 +115,7 @@ interface ItemsState {
   unfavoriteSelected: () => void;
   moveSelected: (folderId: string) => void;
   exportSelected: () => string;
+  reorderItems: (itemIds: string[]) => void;
   setSearchQuery: (query: string) => void;
   setItemTypeFilter: (type: string | null) => void;
   setTagFilter: (tag: string | null) => void;
@@ -1945,6 +1946,25 @@ const useStore = create<StoreState>()((set, get) => ({
       const { selectedItemIds, list } = get().items;
       const selectedItems = list.filter((i) => selectedItemIds.includes(i.id));
       return JSON.stringify(selectedItems, null, 2);
+    },
+
+    reorderItems: (itemIds) => {
+      set((state) => {
+        const now = new Date().toISOString();
+        const reorderedList = [...state.items.list];
+        itemIds.forEach((id, index) => {
+          const itemIndex = reorderedList.findIndex((i) => i.id === id);
+          if (itemIndex !== -1) {
+            reorderedList[itemIndex] = { ...reorderedList[itemIndex], sortOrder: index, updatedAt: now };
+          }
+        });
+        return {
+          items: {
+            ...state.items,
+            list: reorderedList,
+          },
+        };
+      });
     },
 
     incrementUsage: (id) => {
