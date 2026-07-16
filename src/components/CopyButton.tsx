@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { secureCopy } from '@/utils/clipboard';
@@ -10,7 +10,7 @@ interface CopyButtonProps {
   className?: string;
 }
 
-export default function CopyButton({ value, itemId, className }: CopyButtonProps) {
+function CopyButton({ value, itemId, className }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const { incrementUsage } = useItems();
 
@@ -41,3 +41,5 @@ export default function CopyButton({ value, itemId, className }: CopyButtonProps
     </button>
   );
 }
+
+export default memo(CopyButton);

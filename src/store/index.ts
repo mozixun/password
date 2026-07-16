@@ -24,6 +24,7 @@ import type {
   NotificationSettings,
 } from '@/types';
 import { checkEmailBreaches, checkPasswordLeak, type BreachResult } from '@/utils/breachDetection';
+import api from '@/lib/api';
 import {
   generateSecureKey,
   parseSecureKey,
@@ -1139,12 +1140,7 @@ const useStore = create<StoreState>()((set, get) => ({
       let deviceId: string | null = null;
 
       try {
-        const apiResponse = await fetch('http://localhost:3001/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
-        const apiData = await apiResponse.json();
+        const apiData = await api.post('/api/auth/login', { email, password }, { showErrorToast: false, skipAuth: true });
 
         if (!apiData.success) {
           const error = new Error(apiData.message || '登录失败');
@@ -1152,9 +1148,12 @@ const useStore = create<StoreState>()((set, get) => ({
           throw error;
         }
 
-        localStorage.setItem('vaultkey-api-token', apiData.token);
-      } catch (apiError) {
-        console.warn('API login failed, using local fallback:', apiError);
+        if (apiData.token) {
+          localStorage.setItem('vaultkey-api-token', apiData.token);
+        }
+      } catch (apiError: any) {
+        console.warn('API login failed, using local fallback:', apiError.message);
+        throw apiError;
       }
 
       const storedKeyData = localStorage.getItem('vaultkey-local-keys');
@@ -1227,20 +1226,17 @@ const useStore = create<StoreState>()((set, get) => ({
       let deviceId: string | null = null;
 
       try {
-        const apiResponse = await fetch('http://localhost:3001/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
-        const apiData = await apiResponse.json();
+        const apiData = await api.post('/api/auth/register', { email, password }, { showErrorToast: false, skipAuth: true });
 
         if (!apiData.success) {
           return { success: false, message: apiData.message };
         }
 
-        localStorage.setItem('vaultkey-api-token', apiData.token);
-      } catch (apiError) {
-        console.warn('API registration failed, using local fallback:', apiError);
+        if (apiData.token) {
+          localStorage.setItem('vaultkey-api-token', apiData.token);
+        }
+      } catch (apiError: any) {
+        console.warn('API registration failed, using local fallback:', apiError.message);
       }
 
       if (rememberDevice) {

@@ -2,6 +2,8 @@ import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useStore } from "@/store";
 import { useThemeEffect } from "@/hooks/useTheme";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { ToastContainer } from "@/components/Toast";
 
 const Login = lazy(() => import("@/pages/Login"));
 const Unlock = lazy(() => import("@/pages/Unlock"));
@@ -124,206 +126,209 @@ export default function App() {
   }, [isAuthenticated, isLocked, checkAutoLock]);
 
   return (
-    <Router>
-      <Suspense fallback={<Loading />}>
-        <Routes>
-        {/* 文档页面（公开访问） */}
-        <Route path="/docs" element={<DocsHome />} />
-        <Route path="/docs/installation" element={<InstallationDoc />} />
-        <Route path="/docs/usage" element={<UsageDoc />} />
-        <Route path="/docs/development" element={<DevelopmentDoc />} />
-        <Route path="/docs/api" element={<ApiDoc />} />
-        <Route path="/docs/security" element={<SecurityDoc />} />
+    <ErrorBoundary>
+      <Router>
+        <Suspense fallback={<Loading />}>
+          <Routes>
+          {/* 文档页面（公开访问） */}
+          <Route path="/docs" element={<DocsHome />} />
+          <Route path="/docs/installation" element={<InstallationDoc />} />
+          <Route path="/docs/usage" element={<UsageDoc />} />
+          <Route path="/docs/development" element={<DevelopmentDoc />} />
+          <Route path="/docs/api" element={<ApiDoc />} />
+          <Route path="/docs/security" element={<SecurityDoc />} />
 
-        {/* 认证页面 */}
-        <Route
-          path="/auth/login"
-          element={
-            <AuthRoute>
-              <Login />
-            </AuthRoute>
-          }
-        />
+          {/* 认证页面 */}
+          <Route
+            path="/auth/login"
+            element={
+              <AuthRoute>
+                <Login />
+              </AuthRoute>
+            }
+          />
 
-        {/* 解锁页面 */}
-        <Route
-          path="/unlock"
-          element={<UnlockRoute />}
-        />
+          {/* 解锁页面 */}
+          <Route
+            path="/unlock"
+            element={<UnlockRoute />}
+          />
 
-        {/* 首页（公开访问） */}
-        <Route
-          path="/home"
-          element={<Home />}
-        />
+          {/* 首页（公开访问） */}
+          <Route
+            path="/home"
+            element={<Home />}
+          />
 
-        {/* 受保护页面 */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/items"
-          element={
-            <ProtectedRoute>
-              <Items />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/items/detail/:id"
-          element={
-            <ProtectedRoute>
-              <ItemDetail />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/items/new"
-          element={
-            <ProtectedRoute>
-              <ItemDetail />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/items/:type"
-          element={
-            <ProtectedRoute>
-              <Items />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/generator"
-          element={
-            <ProtectedRoute>
-              <Generator />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/authenticator"
-          element={
-            <ProtectedRoute>
-              <Authenticator />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/watchtower"
-          element={
-            <ProtectedRoute>
-              <Watchtower />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings/:section"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/vaults"
-          element={
-            <ProtectedRoute>
-              <Vaults />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/login"
-          element={
-            <AdminLoginRoute>
-              <AdminLogin />
-            </AdminLoginRoute>
-          }
-        />
-        <Route
-          path="/admin/dashboard"
-          element={
-            <AdminProtectedRoute>
-              <AdminDashboard />
-            </AdminProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <AdminProtectedRoute>
-              <AdminUsers />
-            </AdminProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/settings"
-          element={
-            <AdminProtectedRoute>
-              <AdminSettings />
-            </AdminProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/logs"
-          element={
-            <AdminProtectedRoute>
-              <AdminLogs />
-            </AdminProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/redeem-codes"
-          element={
-            <AdminProtectedRoute>
-              <AdminRedeemCodes />
-            </AdminProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/notifications"
-          element={
-            <ProtectedRoute>
-              <Notifications />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/trash"
-          element={
-            <ProtectedRoute>
-              <Trash />
-            </ProtectedRoute>
-          }
-        />
+          {/* 受保护页面 */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/items"
+            element={
+              <ProtectedRoute>
+                <Items />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/items/detail/:id"
+            element={
+              <ProtectedRoute>
+                <ItemDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/items/new"
+            element={
+              <ProtectedRoute>
+                <ItemDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/items/:type"
+            element={
+              <ProtectedRoute>
+                <Items />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/generator"
+            element={
+              <ProtectedRoute>
+                <Generator />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/authenticator"
+            element={
+              <ProtectedRoute>
+                <Authenticator />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/watchtower"
+            element={
+              <ProtectedRoute>
+                <Watchtower />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings/:section"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vaults"
+            element={
+              <ProtectedRoute>
+                <Vaults />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/login"
+            element={
+              <AdminLoginRoute>
+                <AdminLogin />
+              </AdminLoginRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminProtectedRoute>
+                <AdminDashboard />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminProtectedRoute>
+                <AdminUsers />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <AdminProtectedRoute>
+                <AdminSettings />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/logs"
+            element={
+              <AdminProtectedRoute>
+                <AdminLogs />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/redeem-codes"
+            element={
+              <AdminProtectedRoute>
+                <AdminRedeemCodes />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trash"
+            element={
+              <ProtectedRoute>
+                <Trash />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* 默认重定向 */}
-        <Route path="/" element={<RootRedirect />} />
-        <Route path="*" element={<Navigate to="/home" replace />} />
-      </Routes>
-      </Suspense>
-    </Router>
+          {/* 默认重定向 */}
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Routes>
+        </Suspense>
+      </Router>
+      <ToastContainer />
+    </ErrorBoundary>
   );
 }
