@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, Plus, Edit, Trash2, Mail, Shield, Calendar, Lock, Check, X } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { cn } from '@/lib/utils';
+import { toast } from '@/components/Toast';
 
 interface User {
   id: string;
@@ -56,7 +57,7 @@ export default function AdminUsers() {
 
   const handleAddUser = () => {
     if (!addForm.email || !addForm.name) {
-      alert('请填写完整信息');
+      toast.error('请填写完整信息');
       return;
     }
     const newUser: User = {
@@ -77,7 +78,7 @@ export default function AdminUsers() {
 
   const handleSaveEdit = () => {
     if (!editForm.email || !editForm.name) {
-      alert('请填写完整信息');
+      toast.error('请填写完整信息');
       return;
     }
     setUsers(users.map(user => 

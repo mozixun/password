@@ -92,7 +92,7 @@ export async function authenticateWithPasskey(
       allowCredentials: [
         {
           type: 'public-key' as const,
-          id: base64UrlDecode(credentialId),
+          id: base64UrlDecode(credentialId) as BufferSource,
         },
       ],
       timeout: 60000,

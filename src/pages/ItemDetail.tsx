@@ -40,6 +40,7 @@ import type { VaultItem, ItemType, PasswordHistoryEntry, Attachment, TOTPConfig,
 import { cn } from '@/lib/utils';
 import { createPasskey, isPasskeySupported } from '@/utils/passkey';
 import { generateTOTP as generateRealTOTP, getRemainingSeconds } from '@/utils/totp';
+import { toast } from '@/components/Toast';
 
 // ==================== 类型图标映射 ====================
 
@@ -611,7 +612,7 @@ export default function ItemDetail() {
   // 保存操作
   const handleSave = useCallback(() => {
     if (!formData.title?.trim()) {
-      alert('请输入标题');
+      toast.error('请输入标题');
       return;
     }
     if (isNew) {
@@ -717,7 +718,7 @@ export default function ItemDetail() {
 
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
-        alert(`文件 ${file.name} 超过大小限制（最大10MB）`);
+        toast.error(`文件 ${file.name} 超过大小限制（最大10MB）`);
         continue;
       }
 
@@ -744,7 +745,7 @@ export default function ItemDetail() {
         };
         reader.readAsDataURL(file);
       } catch {
-        alert('文件读取失败，请重试');
+        toast.error('文件读取失败，请重试');
       }
     }
 
@@ -1029,7 +1030,7 @@ export default function ItemDetail() {
                     onClick={async () => {
                       const website = formData.url || '';
                       if (!website) {
-                        alert('请先输入网站地址');
+                        toast.error('请先输入网站地址');
                         return;
                       }
                       const passkey = await createPasskey(website, website, profile.profile.email);
@@ -1497,7 +1498,7 @@ export default function ItemDetail() {
                     onClick={async () => {
                       const website = formData.website || '';
                       if (!website) {
-                        alert('请先输入网站域名');
+                        toast.error('请先输入网站域名');
                         return;
                       }
                       const passkey = await createPasskey(website, website, profile.profile.email);
@@ -2510,7 +2511,7 @@ export default function ItemDetail() {
                     if (!email) return;
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(email)) {
-                      alert('请输入有效的邮箱地址');
+                      toast.error('请输入有效的邮箱地址');
                       return;
                     }
                     if (existingItem) {

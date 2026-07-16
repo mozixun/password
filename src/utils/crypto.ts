@@ -355,7 +355,7 @@ export async function decryptWithRSA(
   const decrypted = await crypto.subtle.decrypt(
     { name: 'RSA-OAEP' },
     privateKey,
-    encrypted
+    encrypted as BufferSource
   );
   return new Uint8Array(decrypted);
 }

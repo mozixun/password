@@ -46,6 +46,7 @@ import {
   type BackupSnapshot,
 } from '@/utils/backup';
 import type { VaultItem } from '@/types';
+import { toast } from '@/components/Toast';
 
 // 设置侧边栏项目类型
 type SettingsSection = 'account' | 'security' | 'appearance' | 'importExport' | 'backup' | 'language' | 'about';
@@ -700,7 +701,7 @@ export default function Settings() {
                   className="vault-btn-primary text-sm flex-1"
                   onClick={() => {
                     if (!emergencyEmail) {
-                      alert(language === 'zh' ? '请输入邮箱地址' : 'Please enter email address');
+                      toast.error(language === 'zh' ? '请输入邮箱地址' : 'Please enter email address');
                       return;
                     }
                     const newAccess = {

@@ -29,6 +29,7 @@ import { useWatchtower, useItems, useProfile } from '@/store';
 import type { VaultItem, ItemType } from '@/types';
 import { cn } from '@/lib/utils';
 import { checkEmailBreaches, type BreachResult } from '@/utils/breachDetection';
+import { toast } from '@/components/Toast';
 
 // Tab 类型定义
 type WatchtowerTab = 'weak' | 'reused' | 'compromised' | 'expired' | 'missing_2fa';
@@ -154,7 +155,7 @@ export default function Watchtower() {
       setBreachResults(results);
     } catch {
       setBreachResults([]);
-      alert('泄露检测服务暂时不可用，请检查网络连接后重试');
+      toast.error('泄露检测服务暂时不可用，请检查网络连接后重试');
     } finally {
       setIsCheckingBreaches(false);
     }

@@ -26,6 +26,7 @@ import AppLayout from '@/components/AppLayout';
 import { useStore } from '@/store';
 import { cn } from '@/lib/utils';
 import type { Vault } from '@/types';
+import { toast } from '@/components/Toast';
 
 // 图标选项
 const iconOptions = [
@@ -381,7 +382,7 @@ export default function Vaults() {
                             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
                             onClick={() => {
                               setOpenMenuId(null);
-                              alert('归档功能开发中');
+                              toast.warning('归档功能开发中');
                             }}
                           >
                             <Archive size={14} />

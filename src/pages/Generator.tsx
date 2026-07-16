@@ -6,6 +6,7 @@ import CopyButton from '@/components/CopyButton';
 import { useGenerator } from '@/store';
 import { cn } from '@/lib/utils';
 import type { GeneratedPasswordHistory } from '@/types';
+import { getRandomValues } from '@/utils/crypto';
 
 // 根据字符类型获取颜色类名
 function getCharClass(char: string): string {
@@ -178,17 +179,6 @@ export default function Generator() {
 
   // 生成密码短语
   const generatePassphraseLocal = useCallback(() => {
-    const getRandomValues = (arr: Uint32Array) => {
-      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-        return crypto.getRandomValues(arr);
-      }
-      // 降级方案：使用 Math.random（仅用于开发/测试环境）
-      for (let i = 0; i < arr.length; i++) {
-        arr[i] = Math.floor(Math.random() * 0x100000000);
-      }
-      return arr;
-    };
-
     const array = new Uint32Array(wordCount);
     getRandomValues(array);
     let words = Array.from(array, (v) => PASSPHRASE_WORDS[v % PASSPHRASE_WORDS.length]);
