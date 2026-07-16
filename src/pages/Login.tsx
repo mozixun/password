@@ -7,6 +7,10 @@ import useStore from '@/store';
 // 登录/注册表单类型
 type AuthTab = 'login' | 'register' | 'recovery';
 
+interface AuthError extends Error {
+  remaining?: number;
+}
+
 // 密码强度检测
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   let score = 0;
@@ -84,10 +88,11 @@ export default function Login() {
     try {
       await auth.login(email, password, rememberDevice);
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err?.message || '登录失败：邮箱或密码错误');
-      if (err?.remaining !== undefined) {
-        setRemainingAttempts(err.remaining);
+    } catch (err) {
+      const error = err as AuthError;
+      setError(error?.message || '登录失败：邮箱或密码错误');
+      if (error?.remaining !== undefined) {
+        setRemainingAttempts(error.remaining);
       }
     } finally {
       setIsLoading(false);

@@ -1,4 +1,4 @@
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   Shield,
   LayoutDashboard,
@@ -6,8 +6,6 @@ import {
   Users,
   FileText,
   Ticket,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +16,6 @@ interface NavItem {
 }
 
 export default function AdminSidebar() {
-  const navigate = useNavigate();
   const location = useLocation();
 
   const navItems: NavItem[] = [

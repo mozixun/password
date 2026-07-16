@@ -44,6 +44,10 @@ import {
 
 // ==================== 各切片状态接口定义 ====================
 
+interface AuthError extends Error {
+  remaining?: number;
+}
+
 interface AuthState {
   isAuthenticated: boolean;
   isLocked: boolean;
@@ -1179,16 +1183,16 @@ const useStore = create<StoreState>()((set, get) => ({
         const apiData = await api.post('/api/auth/login', { email, password }, { showErrorToast: false, skipAuth: true });
 
         if (!apiData.success) {
-          const error = new Error(apiData.message || '登录失败');
-          (error as any).remaining = apiData.remaining;
+          const error = new Error(apiData.message || '登录失败') as AuthError;
+          error.remaining = apiData.remaining;
           throw error;
         }
 
         if (apiData.token) {
           localStorage.setItem('vaultkey-api-token', apiData.token);
         }
-      } catch (apiError: any) {
-        console.warn('API login failed, using local fallback:', apiError.message);
+      } catch (apiError) {
+        console.warn('API login failed, using local fallback:', (apiError as Error).message);
         throw apiError;
       }
 
@@ -1271,8 +1275,8 @@ const useStore = create<StoreState>()((set, get) => ({
         if (apiData.token) {
           localStorage.setItem('vaultkey-api-token', apiData.token);
         }
-      } catch (apiError: any) {
-        console.warn('API registration failed, using local fallback:', apiError.message);
+      } catch (apiError) {
+        console.warn('API registration failed, using local fallback:', (apiError as Error).message);
       }
 
       if (rememberDevice) {

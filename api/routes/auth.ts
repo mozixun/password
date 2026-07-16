@@ -194,39 +194,4 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
   });
 });
 
-router.post('/logout', async (req: Request, res: Response): Promise<void> => {
-  res.status(200).json({ success: true, message: '登出成功' });
-});
-
-router.get('/me', async (req: Request, res: Response): Promise<void> => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ success: false, message: '未授权' });
-    return;
-  }
-
-  const token = authHeader.slice(7);
-  const payload = verifyJWT(token);
-  
-  if (!payload) {
-    res.status(401).json({ success: false, message: '无效的令牌' });
-    return;
-  }
-
-  const user = users.find((u) => u.id === payload.userId);
-  if (!user) {
-    res.status(404).json({ success: false, message: '用户不存在' });
-    return;
-  }
-
-  res.status(200).json({
-    success: true,
-    user: {
-      id: user.id,
-      email: user.email,
-      createdAt: user.createdAt,
-    },
-  });
-});
-
 export default router;

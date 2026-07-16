@@ -6,7 +6,6 @@ import {
   ShieldAlert,
   CreditCard,
   Info,
-  CheckCircle2,
   Trash2,
   ArrowLeft,
   Settings,

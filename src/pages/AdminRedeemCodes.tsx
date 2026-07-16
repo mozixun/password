@@ -33,17 +33,6 @@ function getPlanLabel(planType: SubscriptionPlan) {
   return plan ? plan.label : planType;
 }
 
-function formatDate(dateStr: string) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 function getStatus(code: { enabled: boolean; expiresAt: string; usedCount: number; totalUses: number }) {
   const now = new Date();
   const expired = new Date(code.expiresAt) < now;

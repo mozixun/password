@@ -261,7 +261,7 @@ export default function Settings() {
         return;
       }
 
-      const { hasConflicts, conflicts, newItems } = checkConflicts(items);
+      const { hasConflicts, conflicts } = checkConflicts(items);
       
       if (hasConflicts && !showImportPreview) {
         setShowImportPreview(true);

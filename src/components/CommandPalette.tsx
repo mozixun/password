@@ -53,7 +53,7 @@ interface CommandPaletteProps {
 
 export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
-  const { items, vaults } = useStore();
+  const { items } = useStore();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);

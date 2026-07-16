@@ -1,5 +1,5 @@
 // VaultKey 密码管理器 - 项目列表页面
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Plus,
@@ -189,7 +189,6 @@ export default function Items() {
 
   // 高级筛选状态
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
-  const [passwordStrengthFilter, setPasswordStrengthFilter] = useState<string>('all');
   const [modifiedDateFilter, setModifiedDateFilter] = useState<string>('all');
   const [createdDateFilter, setCreatedDateFilter] = useState<string>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -307,11 +306,12 @@ export default function Items() {
     // 排序
     result = [...result].sort((a, b) => {
       switch (sortBy) {
-        case 'custom':
+        case 'custom': {
           const sortA = a.sortOrder ?? Number.MAX_SAFE_INTEGER;
           const sortB = b.sortOrder ?? Number.MAX_SAFE_INTEGER;
           if (sortA !== sortB) return sortA - sortB;
           return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        }
         case 'recent':
           return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
         case 'title-asc':
@@ -376,6 +376,7 @@ export default function Items() {
 
   // 拖拽排序处理
   const handleDragStart = useCallback((e: React.DragEvent, itemId: string, index: number) => {
+    void index;
     if (!customSortEnabled) return;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', itemId);
@@ -1005,7 +1006,6 @@ export default function Items() {
                   </div>
                   <button
                     onClick={() => {
-                      setPasswordStrengthFilter('all');
                       setModifiedDateFilter('all');
                       setCreatedDateFilter('all');
                       setSelectedTags([]);

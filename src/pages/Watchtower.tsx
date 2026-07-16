@@ -171,7 +171,6 @@ export default function Watchtower() {
   const weakAlerts = useMemo(() => alerts.filter((a) => a.type === 'weak'), [alerts]);
   const compromisedAlerts = useMemo(() => alerts.filter((a) => a.type === 'compromised'), [alerts]);
   const expiredAlerts = useMemo(() => alerts.filter((a) => a.type === 'expired'), [alerts]);
-  const missing2FAAlerts = useMemo(() => alerts.filter((a) => a.type === 'missing_2fa'), [alerts]);
 
   // 缺失2FA的登录项目
   const missing2FAItems = useMemo(() => {
