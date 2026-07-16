@@ -2469,7 +2469,7 @@ export default function ItemDetail() {
       {/* 共享设置模态框 */}
       {showShareModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-vault-surface border border-vault-border rounded-xl p-6 w-96 shadow-xl">
+          <div className="bg-vault-surface border border-vault-border rounded-xl p-6 w-[480px] shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-vault-text">共享设置</h3>
               <button
@@ -2486,6 +2486,39 @@ export default function ItemDetail() {
                 {shareSuccessMessage}
               </div>
             )}
+
+            {/* 分享链接 */}
+            <div className="mb-4 p-3 bg-vault-accent/5 border border-vault-accent/20 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-vault-text-muted">分享链接</span>
+                <span className="vault-badge bg-vault-accent/20 text-vault-accent text-[10px]">公开访问</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={`${window.location.origin}/share/${existingItem?.id}`}
+                  readOnly
+                  className="flex-1 vault-input text-xs font-mono py-1.5 bg-vault-surface"
+                />
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(`${window.location.origin}/share/${existingItem?.id}`);
+                      toast.success('分享链接已复制');
+                    } catch {
+                      toast.error('复制失败');
+                    }
+                  }}
+                  className="vault-btn-secondary text-xs py-1.5 px-3 flex items-center gap-1"
+                >
+                  <Copy size={12} />
+                  复制
+                </button>
+              </div>
+              <p className="text-[10px] text-vault-text-muted mt-2">
+                其他人可通过此链接查看此条目（仅当条目设置为公开时有效）
+              </p>
+            </div>
 
             {/* 添加共享对象 */}
             <div className="space-y-3 mb-4">
@@ -2530,9 +2563,9 @@ export default function ItemDetail() {
             </div>
 
             {/* 已共享列表 */}
-            {existingItem?.sharedWith && existingItem.sharedWith.length > 0 && (
-              <div className="border-t border-vault-border/50 pt-4 mb-4">
-                <p className="text-xs text-vault-text-muted mb-2">已共享给：</p>
+            <div className="border-t border-vault-border/50 pt-4 mb-4">
+              <p className="text-xs text-vault-text-muted mb-2">已共享给：</p>
+              {existingItem?.sharedWith && existingItem.sharedWith.length > 0 ? (
                 <div className="space-y-2">
                   {existingItem.sharedWith.map((share) => (
                     <div key={share.id} className="flex items-center justify-between p-2 rounded-lg bg-vault-hover/50">
@@ -2574,8 +2607,21 @@ export default function ItemDetail() {
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="text-xs text-vault-text-muted py-4 text-center">
+                  暂无共享对象
+                </div>
+              )}
+            </div>
+
+            {/* 共享权限说明 */}
+            <div className="mb-4 p-3 bg-vault-surface rounded-lg">
+              <h4 className="text-xs font-medium text-vault-text-secondary mb-2">权限说明</h4>
+              <div className="space-y-1 text-[10px] text-vault-text-muted">
+                <p><span className="font-medium text-vault-text">可查看：</span>用户可以查看条目的所有内容，但不能修改或删除</p>
+                <p><span className="font-medium text-vault-text">可编辑：</span>用户可以查看、编辑条目的所有内容，但不能删除</p>
               </div>
-            )}
+            </div>
 
             <div className="flex gap-3">
               <button

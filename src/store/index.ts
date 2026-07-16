@@ -9,6 +9,7 @@ import type {
   Device,
   UserProfile,
   Folder,
+  Tag,
   VaultSettings,
   RecoveryKey,
   EmergencyAccess,
@@ -91,9 +92,18 @@ interface FoldersState {
   setCurrentFolder: (folderId: string | null) => void;
 }
 
+interface TagsState {
+  list: Tag[];
+  addTag: (tag: Omit<Tag, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateTag: (tagId: string, updates: Partial<Tag>) => void;
+  deleteTag: (tagId: string) => void;
+  getTagColor: (tagName: string) => string;
+}
+
 interface ItemsState {
   list: VaultItem[];
   searchQuery: string;
+  searchHistory: string[];
   itemTypeFilter: string | null;
   tagFilter: string | null;
   selectedItemIds: string[];
@@ -121,6 +131,9 @@ interface ItemsState {
   setItemTypeFilter: (type: string | null) => void;
   setTagFilter: (tag: string | null) => void;
   setShowTrashed: (show: boolean) => void;
+  addToSearchHistory: (query: string) => void;
+  clearSearchHistory: () => void;
+  removeFromSearchHistory: (query: string) => void;
   incrementUsage: (id: string) => void;
   addAttachment: (itemId: string, attachment: Omit<Attachment, 'id' | 'createdAt'>) => void;
   removeAttachment: (itemId: string, attachmentId: string) => void;
@@ -185,6 +198,9 @@ interface SettingsState {
   settings: VaultSettings;
   recoveryKeys: RecoveryKey[];
   emergencyAccess: EmergencyAccess[];
+  syncStatus: 'idle' | 'syncing' | 'synced' | 'error';
+  lastSyncAt: string | null;
+  pendingChanges: number;
   updateSettings: (updates: Partial<VaultSettings>) => void;
   toggleTravelMode: () => void;
   generateRecoveryKey: () => RecoveryKey;
@@ -194,12 +210,17 @@ interface SettingsState {
   addBlockedDomain: (domain: string) => void;
   removeBlockedDomain: (domain: string) => void;
   setMatchMode: (mode: 'exact' | 'fuzzy') => void;
+  triggerSync: () => void;
+  setSyncStatus: (status: 'idle' | 'syncing' | 'synced' | 'error') => void;
+  incrementPendingChanges: () => void;
+  resetPendingChanges: () => void;
 }
 
 interface ProfileState {
   profile: UserProfile;
   devices: Device[];
   removeDevice: (deviceId: string) => void;
+  updateProfile: (updates: Partial<UserProfile>) => void;
 }
 
 interface AdminState {
@@ -219,6 +240,14 @@ interface NotificationState {
   markAllAsRead: () => void;
   clearNotification: (id: string) => void;
   clearAll: () => void;
+  settings: {
+    securityAlerts: boolean;
+    subscriptionAlerts: boolean;
+    systemAlerts: boolean;
+    inApp: boolean;
+    email: boolean;
+  };
+  updateSettings: (updates: Partial<NotificationState['settings']>) => void;
 }
 
 interface SubscriptionState {
@@ -232,6 +261,7 @@ interface StoreState {
   auth: AuthState;
   vaults: VaultsState;
   folders: FoldersState;
+  tags: TagsState;
   items: ItemsState;
   watchtower: WatchtowerState;
   generator: GeneratorState;
@@ -1661,10 +1691,76 @@ const useStore = create<StoreState>()((set, get) => ({
     },
   },
 
+  // ---------- 标签切片 ----------
+  tags: {
+    list: [
+      { id: 'tag-1', name: '开发', color: '#6366f1', vaultId: 'vault-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+      { id: 'tag-2', name: '代码', color: '#8b5cf6', vaultId: 'vault-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+      { id: 'tag-3', name: '邮箱', color: '#06b6d4', vaultId: 'vault-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+      { id: 'tag-4', name: '常用', color: '#10b981', vaultId: 'vault-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+      { id: 'tag-5', name: '银行卡', color: '#f59e0b', vaultId: 'vault-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+      { id: 'tag-6', name: '支付', color: '#ec4899', vaultId: 'vault-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+      { id: 'tag-7', name: '娱乐', color: '#ef4444', vaultId: 'vault-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+      { id: 'tag-8', name: '重要', color: '#dc2626', vaultId: 'vault-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+      { id: 'tag-9', name: '工作', color: '#3b82f6', vaultId: 'vault-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+      { id: 'tag-10', name: '服务器', color: '#14b8a6', vaultId: 'vault-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+    ],
+
+    addTag: (tag) => {
+      const now = new Date().toISOString();
+      const newTag: Tag = {
+        ...tag,
+        id: `tag-${Date.now()}`,
+        createdAt: now,
+        updatedAt: now,
+      };
+      set((state) => ({
+        tags: { ...state.tags, list: [...state.tags.list, newTag] },
+      }));
+    },
+
+    updateTag: (tagId, updates) => {
+      const now = new Date().toISOString();
+      set((state) => ({
+        tags: {
+          ...state.tags,
+          list: state.tags.list.map((tag) =>
+            tag.id === tagId ? { ...tag, ...updates, updatedAt: now } : tag
+          ),
+        },
+      }));
+    },
+
+    deleteTag: (tagId) => {
+      set((state) => {
+        const deletedTag = state.tags.list.find((tag) => tag.id === tagId);
+        return {
+          tags: {
+            ...state.tags,
+            list: state.tags.list.filter((tag) => tag.id !== tagId),
+          },
+          items: {
+            ...state.items,
+            list: state.items.list.map((item) => ({
+              ...item,
+              tags: item.tags.filter((tag) => tag !== deletedTag?.name),
+            })),
+          },
+        };
+      });
+    },
+
+    getTagColor: (tagName) => {
+      const tag = get().tags.list.find((t) => t.name === tagName);
+      return tag?.color || '#9ca3af';
+    },
+  },
+
   // ---------- 条目切片 ----------
   items: {
     list: mockItems,
     searchQuery: '',
+    searchHistory: [],
     itemTypeFilter: null,
     tagFilter: null,
     selectedItemIds: [],
@@ -2016,6 +2112,33 @@ const useStore = create<StoreState>()((set, get) => ({
     setSearchQuery: (query) => {
       set((state) => ({
         items: { ...state.items, searchQuery: query },
+      }));
+    },
+
+    addToSearchHistory: (query) => {
+      if (!query.trim()) return;
+      set((state) => {
+        const existingHistory = state.items.searchHistory;
+        const filtered = existingHistory.filter(h => h.toLowerCase() !== query.toLowerCase());
+        const newHistory = [query.trim(), ...filtered].slice(0, 10);
+        return {
+          items: { ...state.items, searchHistory: newHistory },
+        };
+      });
+    },
+
+    clearSearchHistory: () => {
+      set((state) => ({
+        items: { ...state.items, searchHistory: [] },
+      }));
+    },
+
+    removeFromSearchHistory: (query) => {
+      set((state) => ({
+        items: {
+          ...state.items,
+          searchHistory: state.items.searchHistory.filter(h => h !== query),
+        },
       }));
     },
 
@@ -2522,6 +2645,9 @@ const useStore = create<StoreState>()((set, get) => ({
     settings: mockSettings,
     recoveryKeys: mockRecoveryKeys,
     emergencyAccess: mockEmergencyAccess,
+    syncStatus: 'idle' as 'idle' | 'syncing' | 'synced' | 'error',
+    lastSyncAt: '2025-07-01T09:00:00Z',
+    pendingChanges: 0,
 
     updateSettings: (updates) => {
       set((state) => ({
@@ -2643,6 +2769,45 @@ const useStore = create<StoreState>()((set, get) => ({
         },
       }));
     },
+
+    triggerSync: () => {
+      set((state) => ({
+        settings: { ...state.settings, syncStatus: 'syncing' },
+      }));
+      setTimeout(() => {
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            syncStatus: 'synced',
+            lastSyncAt: new Date().toISOString(),
+            pendingChanges: 0,
+          },
+        }));
+        setTimeout(() => {
+          set((state) => ({
+            settings: { ...state.settings, syncStatus: 'idle' },
+          }));
+        }, 3000);
+      }, 1500);
+    },
+
+    setSyncStatus: (status) => {
+      set((state) => ({
+        settings: { ...state.settings, syncStatus: status },
+      }));
+    },
+
+    incrementPendingChanges: () => {
+      set((state) => ({
+        settings: { ...state.settings, pendingChanges: state.settings.pendingChanges + 1 },
+      }));
+    },
+
+    resetPendingChanges: () => {
+      set((state) => ({
+        settings: { ...state.settings, pendingChanges: 0 },
+      }));
+    },
   },
 
   // ---------- 用户资料切片 ----------
@@ -2655,6 +2820,15 @@ const useStore = create<StoreState>()((set, get) => ({
         profile: {
           ...state.profile,
           devices: state.profile.devices.filter((d) => d.id !== deviceId),
+        },
+      }));
+    },
+
+    updateProfile: (updates) => {
+      set((state) => ({
+        profile: {
+          ...state.profile,
+          profile: { ...state.profile.profile, ...updates },
         },
       }));
     },
@@ -2752,6 +2926,13 @@ const useStore = create<StoreState>()((set, get) => ({
   notifications: {
     notifications: mockNotifications,
     unreadCount: mockNotifications.filter((n) => !n.read).length,
+    settings: {
+      securityAlerts: true,
+      subscriptionAlerts: true,
+      systemAlerts: true,
+      inApp: true,
+      email: true,
+    },
 
     addNotification: (notification) => {
       const now = new Date().toISOString();
@@ -2817,6 +2998,15 @@ const useStore = create<StoreState>()((set, get) => ({
           ...state.notifications,
           notifications: [],
           unreadCount: 0,
+        },
+      }));
+    },
+
+    updateSettings: (updates) => {
+      set((state) => ({
+        notifications: {
+          ...state.notifications,
+          settings: { ...state.notifications.settings, ...updates },
         },
       }));
     },
@@ -2941,6 +3131,10 @@ export const useNotifications = () =>
 /** 订阅状态选择器 */
 export const useSubscription = () =>
   useStore((state) => state.subscription);
+
+/** 标签状态选择器 */
+export const useTags = () =>
+  useStore((state) => state.tags);
 
 // 同时提供命名导出和默认导出，兼容不同导入方式
 export { useStore };

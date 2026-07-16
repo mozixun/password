@@ -19,6 +19,7 @@ const Vaults = lazy(() => import("@/pages/Vaults"));
 const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminUsers = lazy(() => import("@/pages/AdminUsers"));
+const AdminUserDetail = lazy(() => import("@/pages/AdminUserDetail"));
 const AdminLogs = lazy(() => import("@/pages/AdminLogs"));
 const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
 const AdminRedeemCodes = lazy(() => import("@/pages/AdminRedeemCodes"));
@@ -270,6 +271,14 @@ export default function App() {
             element={
               <AdminProtectedRoute>
                 <AdminUsers />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users/:userId"
+            element={
+              <AdminProtectedRoute>
+                <AdminUserDetail />
               </AdminProtectedRoute>
             }
           />

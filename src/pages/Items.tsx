@@ -29,6 +29,7 @@ import {
   ExternalLink,
   Copy,
   GripVertical,
+  X,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import ItemCard from '@/components/ItemCard';
@@ -152,6 +153,43 @@ export default function Items() {
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [customSortEnabled, setCustomSortEnabled] = useState(false);
+
+  // 搜索历史
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => {
+    const saved = localStorage.getItem('vaultkey-search-history');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showSearchHistory, setShowSearchHistory] = useState(false);
+
+  const MAX_SEARCH_HISTORY = 10;
+
+  const addSearchToHistory = useCallback((query: string) => {
+    if (!query.trim()) return;
+    setSearchHistory((prev) => {
+      const filtered = prev.filter((q) => q.toLowerCase() !== query.toLowerCase());
+      const newHistory = [query.trim(), ...filtered].slice(0, MAX_SEARCH_HISTORY);
+      localStorage.setItem('vaultkey-search-history', JSON.stringify(newHistory));
+      return newHistory;
+    });
+  }, []);
+
+  const removeFromSearchHistory = useCallback((query: string) => {
+    setSearchHistory((prev) => {
+      const newHistory = prev.filter((q) => q !== query);
+      localStorage.setItem('vaultkey-search-history', JSON.stringify(newHistory));
+      return newHistory;
+    });
+  }, []);
+
+  const clearSearchHistory = useCallback(() => {
+    setSearchHistory([]);
+    localStorage.removeItem('vaultkey-search-history');
+  }, []);
+
+  // 高级筛选状态
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [passwordStrengthFilter, setPasswordStrengthFilter] = useState<string>('all');
+  const [modifiedDateFilter, setModifiedDateFilter] = useState<string>('all');
 
   // 右键菜单状态
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -740,19 +778,140 @@ export default function Items() {
           <div className="space-y-3 mb-5">
             {/* 搜索框 */}
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-vault-text-muted" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                className="w-full bg-vault-surface border border-vault-border rounded-lg pl-9 pr-10 py-2 text-sm text-vault-text placeholder:text-vault-text-muted focus:outline-none focus:border-vault-accent/50 focus:ring-1 focus:ring-vault-accent/25 transition-colors"
-                placeholder="搜索项目..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] bg-vault-hover px-1.5 py-0.5 rounded text-vault-text-secondary pointer-events-none">
-                ⌘K
-              </kbd>
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-vault-text-muted" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="w-full bg-vault-surface border border-vault-border rounded-lg pl-9 pr-28 py-2 text-sm text-vault-text placeholder:text-vault-text-muted focus:outline-none focus:border-vault-accent/50 focus:ring-1 focus:ring-vault-accent/25 transition-colors"
+                  placeholder="搜索项目..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (!e.target.value) {
+                      setShowSearchHistory(true);
+                    }
+                  }}
+                  onFocus={() => setShowSearchHistory(true)}
+                  onBlur={() => setTimeout(() => setShowSearchHistory(false), 200)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      addSearchToHistory(searchQuery);
+                      setShowSearchHistory(false);
+                    }
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-10 top-1/2 -translate-y-1/2 text-vault-text-muted hover:text-vault-text"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                  className={cn(
+                    'absolute right-3 top-1/2 -translate-y-1/2 text-xs px-2 py-0.5 rounded transition-colors',
+                    showAdvancedSearch
+                      ? 'bg-vault-accent text-white'
+                      : 'bg-vault-hover text-vault-text-secondary hover:text-vault-text'
+                  )}
+                >
+                  高级
+                </button>
+                <kbd className="absolute right-24 top-1/2 -translate-y-1/2 text-[10px] bg-vault-hover px-1.5 py-0.5 rounded text-vault-text-secondary pointer-events-none">
+                  ⌘K
+                </kbd>
+              </div>
+
+              {/* 搜索历史下拉 */}
+              {showSearchHistory && !searchQuery && searchHistory.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-vault-surface border border-vault-border rounded-lg shadow-xl z-30 overflow-hidden">
+                  <div className="p-2 flex items-center justify-between border-b border-vault-border/50">
+                    <span className="text-xs text-vault-text-muted font-medium">搜索历史</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearSearchHistory();
+                      }}
+                      className="text-xs text-vault-text-muted hover:text-vault-warn"
+                    >
+                      清空
+                    </button>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {searchHistory.map((query) => (
+                      <button
+                        key={query}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSearchQuery(query);
+                          setShowSearchHistory(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
+                      >
+                        <Search size={12} className="text-vault-text-muted" />
+                        <span className="flex-1 text-left truncate">{query}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromSearchHistory(query);
+                          }}
+                          className="p-1 text-vault-text-muted hover:text-vault-warn"
+                        >
+                          <X size={12} />
+                        </button>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* 高级筛选 */}
+            {showAdvancedSearch && (
+              <div className="mt-3 p-4 bg-vault-surface/50 border border-vault-border rounded-lg space-y-4">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-vault-text-muted">密码强度:</span>
+                    <select
+                      value={passwordStrengthFilter}
+                      onChange={(e) => setPasswordStrengthFilter(e.target.value)}
+                      className="bg-vault-surface border border-vault-border rounded-lg px-3 py-1.5 text-sm text-vault-text focus:outline-none focus:border-vault-accent"
+                    >
+                      <option value="all">全部</option>
+                      <option value="weak">弱</option>
+                      <option value="medium">中等</option>
+                      <option value="strong">强</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-vault-text-muted">修改时间:</span>
+                    <select
+                      value={modifiedDateFilter}
+                      onChange={(e) => setModifiedDateFilter(e.target.value)}
+                      className="bg-vault-surface border border-vault-border rounded-lg px-3 py-1.5 text-sm text-vault-text focus:outline-none focus:border-vault-accent"
+                    >
+                      <option value="all">全部</option>
+                      <option value="today">今天</option>
+                      <option value="week">本周</option>
+                      <option value="month">本月</option>
+                      <option value="year">本年</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setPasswordStrengthFilter('all');
+                      setModifiedDateFilter('all');
+                    }}
+                    className="text-xs text-vault-accent hover:text-vault-accent-hover"
+                  >
+                    重置筛选
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* 类型筛选标签 + 排序 + 收藏 */}
             <div className="flex items-center gap-2 flex-wrap">

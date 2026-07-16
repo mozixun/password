@@ -196,6 +196,15 @@ export interface Folder {
   updatedAt: string;
 }
 
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+  vaultId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface VaultMember {
   id: string;
   email: string;
@@ -284,6 +293,7 @@ export interface NotificationSettings {
 
 export interface UserProfile {
   email: string;
+  name?: string;
   createdAt: string;
   plan: SubscriptionPlan;
   avatarUrl?: string;

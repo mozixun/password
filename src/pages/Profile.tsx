@@ -17,10 +17,18 @@ import {
   Check,
   Gift,
   AlertTriangle,
+  Edit2,
+  Upload,
+  Lock,
+  Save,
+  X,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { useProfile, useAuth, useSubscription, useStore } from '@/store';
 import { cn } from '@/lib/utils';
+import { toast } from '@/components/Toast';
 
 // 设备类型图标映射
 const deviceIcons: Record<string, React.ReactNode> = {
@@ -34,7 +42,7 @@ const deviceIcons: Record<string, React.ReactNode> = {
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { profile, devices } = useProfile();
+  const { profile, devices, updateProfile } = useProfile();
   const { removeDevice } = useStore((s) => s.profile);
   const auth = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -43,6 +51,22 @@ export default function Profile() {
   const [redeemCode, setRedeemCode] = useState('');
   const [redeemError, setRedeemError] = useState('');
   const [redeemSuccess, setRedeemSuccess] = useState('');
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState(profile.name || '');
+  const [editEmail, setEditEmail] = useState(profile.email);
+
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // 计算注册日期的友好显示
   const formatDate = (dateStr: string) => {
@@ -96,6 +120,80 @@ export default function Profile() {
     }
   };
 
+  const handleSaveProfile = () => {
+    if (!editEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail)) {
+      toast.error('请输入有效的邮箱地址');
+      return;
+    }
+    updateProfile({
+      name: editName.trim(),
+      email: editEmail,
+    });
+    setIsEditingProfile(false);
+    toast.success('个人资料更新成功');
+  };
+
+  const handleCancelProfileEdit = () => {
+    setEditName(profile.name || '');
+    setEditEmail(profile.email);
+    setIsEditingProfile(false);
+  };
+
+  const handlePasswordChange = () => {
+    if (!currentPassword) {
+      setPasswordError('请输入当前密码');
+      return;
+    }
+    if (!newPassword || newPassword.length < 8) {
+      setPasswordError('新密码长度至少8位');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('两次输入的密码不一致');
+      return;
+    }
+    setPasswordError('');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setIsChangingPassword(false);
+    toast.success('密码修改成功，请重新登录');
+    setTimeout(() => {
+      auth.logout();
+      navigate('/auth/login');
+    }, 1500);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('头像文件大小不能超过2MB');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast.error('请选择图片文件');
+        return;
+      }
+      setUploadingAvatar(true);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setAvatarPreview(base64);
+        updateProfile({ avatarUrl: base64 });
+        setUploadingAvatar(false);
+        toast.success('头像上传成功');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    updateProfile({ avatarUrl: '' });
+    setAvatarPreview(null);
+    toast.success('头像已移除');
+  };
+
   // 订阅计划显示
   const planInfo = {
     free: { label: '免费版', color: 'text-vault-text-muted', icon: null },
@@ -117,35 +215,109 @@ export default function Profile() {
 
         {/* 账户信息卡片 */}
         <div className="glass-panel p-6 mb-6">
-          <h2 className="text-lg font-semibold text-vault-text mb-4 flex items-center gap-2">
-            <User size={20} className="text-vault-accent" />
-            账户信息
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-vault-text flex items-center gap-2">
+              <User size={20} className="text-vault-accent" />
+              账户信息
+            </h2>
+            {!isEditingProfile && (
+              <button
+                onClick={() => setIsEditingProfile(true)}
+                className="flex items-center gap-1 text-sm text-vault-accent hover:bg-vault-accent/10 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <Edit2 size={14} />
+                编辑
+              </button>
+            )}
+          </div>
 
           <div className="space-y-4">
             {/* 头像和基本信息 */}
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-vault-accent/20 flex items-center justify-center">
-                {profile.avatarUrl ? (
-                  <img
-                    src={profile.avatarUrl}
-                    alt="头像"
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="text-2xl font-bold text-vault-accent">
-                    {profile.email.charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="text-lg font-medium text-vault-text">{profile.email}</div>
-                <div className="flex items-center gap-2 mt-1">
-                  {currentPlan.icon}
-                  <span className={cn('text-sm', currentPlan.color)}>{currentPlan.label}</span>
+              <div className="relative group">
+                <div className="w-16 h-16 rounded-full bg-vault-accent/20 flex items-center justify-center overflow-hidden">
+                  {(profile.avatarUrl || avatarPreview) ? (
+                    <img
+                      src={avatarPreview || profile.avatarUrl}
+                      alt="头像"
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-vault-accent">
+                      {(profile.name || profile.email).charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  disabled={uploadingAvatar}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Upload size={20} className="text-white" />
                 </div>
               </div>
+              <div className="flex-1">
+                {isEditingProfile ? (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="显示名称"
+                      className="bg-vault-surface border border-vault-border rounded-lg px-3 py-2 text-sm text-vault-text focus:outline-none focus:border-vault-accent w-full"
+                    />
+                    <input
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      className="bg-vault-surface border border-vault-border rounded-lg px-3 py-2 text-sm text-vault-text focus:outline-none focus:border-vault-accent w-full"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-lg font-medium text-vault-text">
+                      {profile.name || profile.email}
+                    </div>
+                    <div className="text-sm text-vault-text-secondary">{profile.email}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      {currentPlan.icon}
+                      <span className={cn('text-sm', currentPlan.color)}>{currentPlan.label}</span>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
+
+            {isEditingProfile && (
+              <div className="flex gap-3 pt-4 border-t border-vault-border/50">
+                <button
+                  onClick={handleSaveProfile}
+                  className="flex items-center gap-1 bg-vault-accent text-white px-4 py-2 rounded-lg text-sm"
+                >
+                  <Save size={14} />
+                  保存
+                </button>
+                <button
+                  onClick={handleCancelProfileEdit}
+                  className="flex items-center gap-1 text-vault-text-muted hover:text-vault-text px-4 py-2 rounded-lg text-sm"
+                >
+                  <X size={14} />
+                  取消
+                </button>
+                {profile.avatarUrl && (
+                  <button
+                    onClick={handleRemoveAvatar}
+                    className="flex items-center gap-1 text-vault-warn hover:bg-vault-warn/10 px-4 py-2 rounded-lg text-sm ml-auto"
+                  >
+                    <Trash2 size={14} />
+                    移除头像
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* 详细信息 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-vault-border/50">
@@ -266,6 +438,116 @@ export default function Profile() {
               ) : null;
             })()}
           </div>
+        </div>
+
+        {/* 修改密码 */}
+        <div className="glass-panel p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-vault-text flex items-center gap-2">
+              <Lock size={20} className="text-vault-accent" />
+              修改密码
+            </h2>
+            {!isChangingPassword && (
+              <button
+                onClick={() => setIsChangingPassword(true)}
+                className="flex items-center gap-1 text-sm text-vault-accent hover:bg-vault-accent/10 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <Edit2 size={14} />
+                修改
+              </button>
+            )}
+          </div>
+
+          {isChangingPassword ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs text-vault-text-muted mb-1">当前密码</label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="请输入当前密码"
+                    className="w-full bg-vault-surface border border-vault-border rounded-lg px-4 py-2 text-vault-text focus:outline-none focus:border-vault-accent pr-10"
+                  />
+                  <button
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-vault-text-muted hover:text-vault-text"
+                  >
+                    {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-vault-text-muted mb-1">新密码</label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="请输入新密码（至少8位）"
+                    className="w-full bg-vault-surface border border-vault-border rounded-lg px-4 py-2 text-vault-text focus:outline-none focus:border-vault-accent pr-10"
+                  />
+                  <button
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-vault-text-muted hover:text-vault-text"
+                  >
+                    {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-vault-text-muted mb-1">确认新密码</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="请再次输入新密码"
+                    className="w-full bg-vault-surface border border-vault-border rounded-lg px-4 py-2 text-vault-text focus:outline-none focus:border-vault-accent pr-10"
+                  />
+                  <button
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-vault-text-muted hover:text-vault-text"
+                  >
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              {passwordError && (
+                <p className="text-sm text-red-400 flex items-center gap-1">
+                  <AlertTriangle size={14} />
+                  {passwordError}
+                </p>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handlePasswordChange}
+                  className="flex items-center gap-1 bg-vault-accent text-white px-4 py-2 rounded-lg text-sm"
+                >
+                  <Save size={14} />
+                  确认修改
+                </button>
+                <button
+                  onClick={() => {
+                    setIsChangingPassword(false);
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setPasswordError('');
+                  }}
+                  className="flex items-center gap-1 text-vault-text-muted hover:text-vault-text px-4 py-2 rounded-lg text-sm"
+                >
+                  <X size={14} />
+                  取消
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-vault-text-secondary">
+              定期更换密码是保护账户安全的重要方式
+            </p>
+          )}
         </div>
 
         {/* 兑换码兑换 */}

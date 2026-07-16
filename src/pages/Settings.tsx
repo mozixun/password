@@ -116,6 +116,9 @@ export default function Settings() {
   const [lastImportDate, setLastImportDate] = useState('2025-06-15 14:30');
   const [lastExportDate, setLastExportDate] = useState('2025-07-01 09:00');
   const [importResult, setImportResult] = useState<{ success: boolean; count: number; message: string } | null>(null);
+  const [importPreview, setImportPreview] = useState<VaultItem[] | null>(null);
+  const [conflictAction, setConflictAction] = useState<'skip' | 'replace' | 'merge'>('merge');
+  const [showImportPreview, setShowImportPreview] = useState(false);
 
   // ====== 语言设置状态 ======
   const selectedLanguage = language;
@@ -202,16 +205,46 @@ export default function Settings() {
     }
   };
 
-  // 加载文件内容
+  // 加载文件内容并预览
   const loadFile = (file: File) => {
     setSelectedFile(file.name);
     setImportResult(null);
+    setShowImportPreview(false);
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      setImportFileContent(e.target?.result as string);
+      const content = e.target?.result as string;
+      setImportFileContent(content);
+      
+      try {
+        const items = importData(content, importFormat);
+        if (items.length > 0) {
+          setImportPreview(items);
+        } else {
+          setImportPreview(null);
+        }
+      } catch {
+        setImportPreview(null);
+      }
     };
     reader.readAsText(file);
+  };
+
+  // 检查冲突
+  const checkConflicts = (items: VaultItem[]): { hasConflicts: boolean; conflicts: VaultItem[]; newItems: VaultItem[] } => {
+    const existingTitles = new Set(itemsStore.list.map(i => i.title.toLowerCase()));
+    const conflicts: VaultItem[] = [];
+    const newItems: VaultItem[] = [];
+
+    items.forEach(item => {
+      if (existingTitles.has(item.title.toLowerCase())) {
+        conflicts.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+
+    return { hasConflicts: conflicts.length > 0, conflicts, newItems };
   };
 
   // 执行导入
@@ -226,14 +259,49 @@ export default function Settings() {
         return;
       }
 
+      const { hasConflicts, conflicts, newItems } = checkConflicts(items);
+      
+      if (hasConflicts && !showImportPreview) {
+        setShowImportPreview(true);
+        setImportPreview(items);
+        return;
+      }
+
+      let importedCount = 0;
+
       items.forEach((item) => {
-        itemsStore.addItem(item as Omit<VaultItem, 'id' | 'createdAt' | 'updatedAt'>);
+        const existingItem = itemsStore.list.find(i => i.title.toLowerCase() === item.title.toLowerCase());
+        
+        if (existingItem) {
+          if (conflictAction === 'replace') {
+            itemsStore.updateItem(existingItem.id, {
+              username: item.username,
+              password: item.password,
+              url: item.url,
+              notes: item.notes,
+              tags: item.tags,
+            });
+            importedCount++;
+          } else if (conflictAction === 'merge') {
+            const mergedTags = [...new Set([...(existingItem.tags || []), ...(item.tags || [])])];
+            itemsStore.updateItem(existingItem.id, {
+              tags: mergedTags,
+              notes: existingItem.notes || item.notes,
+            });
+            importedCount++;
+          }
+        } else {
+          itemsStore.addItem(item as Omit<VaultItem, 'id' | 'createdAt' | 'updatedAt'>);
+          importedCount++;
+        }
       });
 
       setLastImportDate(new Date().toLocaleString('zh-CN'));
-      setImportResult({ success: true, count: items.length, message: `成功导入 ${items.length} 条密码` });
+      setImportResult({ success: true, count: importedCount, message: `成功导入 ${importedCount} 条密码${conflicts.length > 0 ? `，跳过 ${items.length - importedCount} 条重复条目` : ''}` });
       setSelectedFile(null);
       setImportFileContent(null);
+      setImportPreview(null);
+      setShowImportPreview(false);
     } catch {
       setImportResult({ success: false, count: 0, message: '导入失败，请检查文件格式是否正确' });
     }
@@ -1164,8 +1232,12 @@ export default function Settings() {
   };
 
   // 渲染导入导出部分
-  const renderImportExport = () => (
-    <div className="space-y-8">
+  const renderImportExport = () => {
+    const previewItems = importPreview || [];
+    const { hasConflicts, conflicts, newItems } = checkConflicts(previewItems);
+
+    return (
+      <div className="space-y-8">
       {/* 导入部分 */}
       <div className="vault-card p-6">
         <h3 className="text-lg font-semibold text-vault-text mb-4 flex items-center gap-2">
@@ -1220,6 +1292,105 @@ export default function Settings() {
               onChange={handleFileSelect}
             />
           </div>
+
+          {/* 导入预览 */}
+          {importPreview && (
+            <div className="bg-vault-surface rounded-lg p-4 border border-vault-border">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium text-vault-text">导入预览 ({previewItems.length} 条)</h4>
+                <button
+                  onClick={() => {
+                    setShowImportPreview(!showImportPreview);
+                    setImportPreview(null);
+                    setImportFileContent(null);
+                    setSelectedFile(null);
+                  }}
+                  className="text-xs text-vault-text-muted hover:text-vault-text transition-colors"
+                >
+                  清除
+                </button>
+              </div>
+              
+              {/* 统计信息 */}
+              <div className="flex gap-4 mb-4 text-xs">
+                <span className="vault-badge bg-vault-accent/20 text-vault-accent">
+                  新条目: {newItems.length}
+                </span>
+                {hasConflicts && (
+                  <span className="vault-badge bg-vault-orange/20 text-vault-orange">
+                    重复: {conflicts.length}
+                  </span>
+                )}
+              </div>
+
+              {/* 冲突处理方式 */}
+              {hasConflicts && (
+                <div className="mb-4">
+                  <label className="block text-xs text-vault-text-muted mb-1.5">重复条目处理方式</label>
+                  <div className="flex gap-2">
+                    {([
+                      { value: 'skip', label: '跳过' },
+                      { value: 'replace', label: '替换' },
+                      { value: 'merge', label: '合并' },
+                    ] as const).map(({ value, label }) => (
+                      <button
+                        key={value}
+                        onClick={() => setConflictAction(value)}
+                        className={cn(
+                          'px-3 py-1.5 rounded-lg text-xs transition-colors',
+                          conflictAction === value
+                            ? 'bg-vault-accent text-white'
+                            : 'bg-vault-hover text-vault-text-secondary hover:text-vault-text'
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 预览列表 */}
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {previewItems.slice(0, 10).map((item, index) => {
+                  const isConflict = conflicts.some(c => c.title.toLowerCase() === item.title.toLowerCase());
+                  return (
+                    <div
+                      key={index}
+                      className={cn(
+                        'flex items-center gap-3 p-2 rounded-lg',
+                        isConflict ? 'bg-vault-orange/10' : 'bg-vault-hover/50'
+                      )}
+                    >
+                      <div className={cn(
+                        'w-6 h-6 rounded-full flex items-center justify-center text-xs',
+                        isConflict ? 'bg-vault-orange/20 text-vault-orange' : 'bg-vault-accent/20 text-vault-accent'
+                      )}>
+                        {isConflict ? '!' : index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-vault-text truncate">{item.title}</div>
+                        <div className="text-xs text-vault-text-muted truncate">
+                          {item.username || item.email || '无用户名'}
+                        </div>
+                      </div>
+                      {isConflict && (
+                        <span className="vault-badge bg-vault-orange/20 text-vault-orange text-[10px]">
+                          重复
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                {previewItems.length > 10 && (
+                  <div className="text-xs text-vault-text-muted text-center py-2">
+                    ...还有 {previewItems.length - 10} 条未显示
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {importResult && (
             <div
               className={cn(
@@ -1244,7 +1415,7 @@ export default function Settings() {
             disabled={!importFileContent}
             onClick={handleImport}
           >
-            {t.settings.import}
+            {showImportPreview ? '确认导入' : t.settings.import}
           </button>
         </div>
       </div>
@@ -1291,7 +1462,8 @@ export default function Settings() {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // 渲染备份与恢复部分
   const renderBackup = () => (
