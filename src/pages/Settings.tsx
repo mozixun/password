@@ -27,6 +27,8 @@ import {
   HardDriveDownload,
   RotateCcw,
   History,
+  Cloud,
+  RefreshCw,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { useStore, useUI } from '@/store';
@@ -1468,6 +1470,59 @@ export default function Settings() {
   // 渲染备份与恢复部分
   const renderBackup = () => (
     <div className="space-y-8">
+      {/* 云端同步 */}
+      <div className="vault-card p-6">
+        <h3 className="text-lg font-semibold text-vault-text mb-4 flex items-center gap-2">
+          <Cloud size={20} className="text-vault-accent" />
+          云端同步
+        </h3>
+        <div className="space-y-4 max-w-lg">
+          <p className="text-sm text-vault-text-secondary">
+            将您的数据自动同步到云端，确保在任何设备上都能访问最新数据。
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              className="vault-btn-primary text-sm flex items-center gap-1.5"
+              onClick={() => settings.triggerSync()}
+              disabled={settings.syncStatus === 'syncing'}
+            >
+              {settings.syncStatus === 'syncing' ? (
+                <RefreshCw size={16} className="animate-spin" />
+              ) : (
+                <Cloud size={16} />
+              )}
+              {settings.syncStatus === 'syncing' ? '同步中...' : '立即同步'}
+            </button>
+            <span className="text-xs text-vault-text-muted">
+              {settings.lastSyncAt
+                ? `上次同步: ${new Date(settings.lastSyncAt).toLocaleString('zh-CN')}`
+                : '尚未同步'}
+            </span>
+          </div>
+          {settings.pendingChanges > 0 && (
+            <div className="flex items-center gap-2 p-3 bg-vault-warn/10 border border-vault-warn/20 rounded-lg text-sm text-vault-warn">
+              <AlertCircle size={16} />
+              有 {settings.pendingChanges} 项待同步的更改
+            </div>
+          )}
+          <div className="flex items-center gap-2 p-3 bg-vault-surface rounded-lg">
+            <div className={cn(
+              'w-2 h-2 rounded-full',
+              settings.syncStatus === 'synced' ? 'bg-vault-success' :
+              settings.syncStatus === 'syncing' ? 'bg-vault-warn animate-pulse' :
+              settings.syncStatus === 'error' ? 'bg-vault-error' :
+              'bg-vault-text-muted'
+            )} />
+            <span className="text-xs text-vault-text-secondary">
+              {settings.syncStatus === 'synced' ? '已同步' :
+               settings.syncStatus === 'syncing' ? '同步中' :
+               settings.syncStatus === 'error' ? '同步失败' :
+               '待同步'}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* 立即备份 */}
       <div className="vault-card p-6">
         <h3 className="text-lg font-semibold text-vault-text mb-4 flex items-center gap-2">

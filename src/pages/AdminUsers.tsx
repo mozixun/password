@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { Search, Plus, Edit, Trash2, Mail, Shield, Calendar, Lock, Check, X } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Mail, Shield, Calendar, Lock, Check, X, Crown, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/Toast';
+import { useStore } from '@/store';
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: 'super_admin' | 'admin' | 'user';
   status: 'active' | 'inactive' | 'pending';
   createdAt: string;
   lastLogin: string;
@@ -17,6 +19,11 @@ interface User {
 }
 
 export default function AdminUsers() {
+  const navigate = useNavigate();
+  const admin = useStore((state) => state.admin);
+  const canDelete = admin.canDeleteUser();
+  const canManage = admin.canManageAdmins();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -25,15 +32,16 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const [users, setUsers] = useState<User[]>([
-    { id: '1', email: 'admin@vaultkey.com', name: '系统管理员', role: 'admin', status: 'active', createdAt: '2024-01-01', lastLogin: '2025-07-15 10:30', vaultCount: 3, twoFactorEnabled: true },
-    { id: '2', email: 'zhangsan@example.com', name: '张三', role: 'user', status: 'active', createdAt: '2024-03-15', lastLogin: '2025-07-15 09:15', vaultCount: 2, twoFactorEnabled: true },
+    { id: '1', email: 'admin@vaultkey.com', name: '系统管理员', role: 'super_admin', status: 'active', createdAt: '2024-01-01', lastLogin: '2025-07-15 10:30', vaultCount: 3, twoFactorEnabled: true },
+    { id: '2', email: 'zhangsan@example.com', name: '张三', role: 'admin', status: 'active', createdAt: '2024-03-15', lastLogin: '2025-07-15 09:15', vaultCount: 2, twoFactorEnabled: true },
     { id: '3', email: 'lisi@example.com', name: '李四', role: 'user', status: 'active', createdAt: '2024-05-20', lastLogin: '2025-07-14 16:45', vaultCount: 1, twoFactorEnabled: false },
     { id: '4', email: 'wangwu@example.com', name: '王五', role: 'user', status: 'inactive', createdAt: '2024-06-10', lastLogin: '2025-06-20 11:00', vaultCount: 1, twoFactorEnabled: false },
     { id: '5', email: 'chenliu@example.com', name: '陈六', role: 'user', status: 'pending', createdAt: '2025-07-14', lastLogin: '-', vaultCount: 0, twoFactorEnabled: false },
   ]);
 
-  const [addForm, setAddForm] = useState({ email: '', name: '', role: 'user' as 'admin' | 'user' });
-  const [editForm, setEditForm] = useState({ email: '', name: '', role: 'user' as 'admin' | 'user', status: 'active' as 'active' | 'inactive' | 'pending' });
+  type UserRole = 'user' | 'admin' | 'super_admin';
+  const [addForm, setAddForm] = useState({ email: '', name: '', role: 'user' as UserRole });
+  const [editForm, setEditForm] = useState({ email: '', name: '', role: 'user' as UserRole, status: 'active' as 'active' | 'inactive' | 'pending' });
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch = user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -108,7 +116,23 @@ export default function AdminUsers() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white">用户管理</h1>
-            <p className="text-slate-400 text-sm mt-1">管理系统用户和权限</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-slate-400 text-sm">管理系统用户和权限</span>
+              <span className="text-xs">·</span>
+              <span className={cn(
+                'text-xs px-2 py-0.5 rounded-full font-medium',
+                admin.currentRole === 'super_admin'
+                  ? 'bg-yellow-500/20 text-yellow-400'
+                  : admin.currentRole === 'admin'
+                  ? 'bg-vault-accent/20 text-vault-accent'
+                  : 'bg-slate-700 text-slate-300'
+              )}>
+                {admin.currentRole === 'super_admin' ? '超级管理员' : admin.currentRole === 'admin' ? '管理员' : '版主'}
+              </span>
+              {!canManage && (
+                <span className="text-[10px] text-slate-500">(部分功能受限)</span>
+              )}
+            </div>
           </div>
           <button
             className="bg-vault-accent hover:bg-vault-accent-hover text-white font-medium rounded-xl px-4 py-2 flex items-center gap-2 transition-all"
@@ -138,6 +162,7 @@ export default function AdminUsers() {
                 className="bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent transition-colors"
               >
                 <option value="all">全部角色</option>
+                <option value="super_admin">超级管理员</option>
                 <option value="admin">管理员</option>
                 <option value="user">普通用户</option>
               </select>
@@ -188,12 +213,16 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-4 py-4">
                       <span className={cn(
-                        'px-2.5 py-1 rounded-lg text-xs font-medium',
-                        user.role === 'admin'
+                        'px-2.5 py-1 rounded-lg text-xs font-medium inline-flex items-center gap-1',
+                        user.role === 'super_admin'
+                          ? 'bg-yellow-500/10 text-yellow-400'
+                          : user.role === 'admin'
                           ? 'bg-vault-accent/10 text-vault-accent'
                           : 'bg-slate-700 text-slate-300'
                       )}>
-                        {user.role === 'admin' ? '管理员' : '用户'}
+                        {user.role === 'super_admin' && <Crown size={12} />}
+                        {user.role === 'admin' && <Shield size={12} />}
+                        {user.role === 'super_admin' ? '超级管理员' : user.role === 'admin' ? '管理员' : '用户'}
                       </span>
                     </td>
                     <td className="px-4 py-4">
@@ -222,15 +251,24 @@ export default function AdminUsers() {
                       <span className="text-xs text-slate-500">{user.createdAt}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <button
-                          onClick={() => handleEdit(user)}
+                          onClick={() => navigate(`/admin/users/${user.id}`)}
                           className="p-2 rounded-lg text-slate-400 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
-                          title="编辑"
+                          title="查看详情"
                         >
-                          <Edit size={14} />
+                          <Eye size={14} />
                         </button>
-                        {user.role !== 'admin' && (
+                        {(canManage || user.role === 'user') && (
+                          <button
+                            onClick={() => handleEdit(user)}
+                            className="p-2 rounded-lg text-slate-400 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
+                            title="编辑"
+                          >
+                            <Edit size={14} />
+                          </button>
+                        )}
+                        {canDelete && user.role !== 'super_admin' && (
                           <button
                             onClick={() => handleDelete(user.id)}
                             className="p-2 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
@@ -282,13 +320,14 @@ export default function AdminUsers() {
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1.5">角色</label>
-                  <select 
+                  <select
                     value={addForm.role}
-                    onChange={(e) => setAddForm({ ...addForm, role: e.target.value as 'admin' | 'user' })}
+                    onChange={(e) => setAddForm({ ...addForm, role: e.target.value as UserRole })}
                     className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent"
                   >
                     <option value="user">普通用户</option>
                     <option value="admin">管理员</option>
+                    {canManage && <option value="super_admin">超级管理员</option>}
                   </select>
                 </div>
               </div>
@@ -325,13 +364,14 @@ export default function AdminUsers() {
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1.5">角色</label>
-                  <select 
+                  <select
                     value={editForm.role}
-                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value as 'admin' | 'user' })}
+                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value as UserRole })}
                     className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-vault-accent"
                   >
                     <option value="user">普通用户</option>
                     <option value="admin">管理员</option>
+                    {canManage && <option value="super_admin">超级管理员</option>}
                   </select>
                 </div>
                 <div>

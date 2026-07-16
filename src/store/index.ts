@@ -126,6 +126,8 @@ interface ItemsState {
   unfavoriteSelected: () => void;
   moveSelected: (folderId: string) => void;
   exportSelected: () => string;
+  tagSelected: (tag: string) => void;
+  untagSelected: (tag: string) => void;
   reorderItems: (itemIds: string[]) => void;
   setSearchQuery: (query: string) => void;
   setItemTypeFilter: (type: string | null) => void;
@@ -225,11 +227,15 @@ interface ProfileState {
 
 interface AdminState {
   settings: AdminSettings;
+  currentRole: 'super_admin' | 'admin' | 'moderator';
   updateSiteInfo: (updates: Partial<AdminSettings['siteInfo']>) => void;
   generateRedeemCode: (planType: string, expiresAtDate: string, totalUses: number, subscriptionDays: number, customCode?: string) => RedeemCode;
   toggleRedeemCode: (id: string) => void;
   deleteRedeemCode: (id: string) => void;
   updateNotificationConfig: (config: Partial<NotificationSettings>) => void;
+  canDeleteUser: () => boolean;
+  canManageAdmins: () => boolean;
+  canManageSettings: () => boolean;
 }
 
 interface NotificationState {
@@ -2077,6 +2083,40 @@ const useStore = create<StoreState>()((set, get) => ({
       return JSON.stringify(selectedItems, null, 2);
     },
 
+    tagSelected: (tag) => {
+      const { selectedItemIds } = get().items;
+      if (selectedItemIds.length === 0) return;
+      const now = new Date().toISOString();
+      set((state) => ({
+        items: {
+          ...state.items,
+          list: state.items.list.map((i) =>
+            selectedItemIds.includes(i.id) && !i.tags.includes(tag)
+              ? { ...i, tags: [...i.tags, tag], updatedAt: now }
+              : i,
+          ),
+          selectedItemIds: [],
+        },
+      }));
+    },
+
+    untagSelected: (tag) => {
+      const { selectedItemIds } = get().items;
+      if (selectedItemIds.length === 0) return;
+      const now = new Date().toISOString();
+      set((state) => ({
+        items: {
+          ...state.items,
+          list: state.items.list.map((i) =>
+            selectedItemIds.includes(i.id)
+              ? { ...i, tags: i.tags.filter((t) => t !== tag), updatedAt: now }
+              : i,
+          ),
+          selectedItemIds: [],
+        },
+      }));
+    },
+
     reorderItems: (itemIds) => {
       set((state) => {
         const now = new Date().toISOString();
@@ -2837,6 +2877,7 @@ const useStore = create<StoreState>()((set, get) => ({
   // ---------- 管理员设置切片 ----------
   admin: {
     settings: mockAdminSettings,
+    currentRole: 'super_admin' as const,
 
     updateSiteInfo: (updates) => {
       set((state) => ({
@@ -2919,6 +2960,18 @@ const useStore = create<StoreState>()((set, get) => ({
           },
         },
       }));
+    },
+
+    canDeleteUser: () => {
+      return get().admin.currentRole === 'super_admin';
+    },
+
+    canManageAdmins: () => {
+      return get().admin.currentRole === 'super_admin';
+    },
+
+    canManageSettings: () => {
+      return get().admin.currentRole === 'super_admin' || get().admin.currentRole === 'admin';
     },
   },
 

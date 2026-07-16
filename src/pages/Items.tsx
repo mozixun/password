@@ -30,6 +30,7 @@ import {
   Copy,
   GripVertical,
   X,
+  Tag,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import ItemCard from '@/components/ItemCard';
@@ -119,7 +120,7 @@ export default function Items() {
   const { type: typePath } = useParams<{ type?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const { list: items, searchQuery, setSearchQuery, setItemTypeFilter, setTagFilter, tagFilter, selectAll, clearSelection, deleteSelected, moveSelected, exportSelected, selectedItemIds, toggleFavorite, deleteItem, incrementUsage, reorderItems } = useItems();
+  const { list: items, searchQuery, setSearchQuery, setItemTypeFilter, setTagFilter, tagFilter, selectAll, clearSelection, deleteSelected, moveSelected, exportSelected, tagSelected, untagSelected, selectedItemIds, toggleFavorite, deleteItem, incrementUsage, reorderItems } = useItems();
   const { list: vaults, currentVaultId, setCurrentVault } = useVaults();
   const { list: folders } = useFolders();
 
@@ -190,6 +191,9 @@ export default function Items() {
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [passwordStrengthFilter, setPasswordStrengthFilter] = useState<string>('all');
   const [modifiedDateFilter, setModifiedDateFilter] = useState<string>('all');
+  const [createdDateFilter, setCreatedDateFilter] = useState<string>('all');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagFilterMode, setTagFilterMode] = useState<'any' | 'all'>('any');
 
   // 右键菜单状态
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -230,6 +234,21 @@ export default function Items() {
     [folders, currentVaultId],
   );
 
+  // 日期范围辅助函数
+  const isWithinDateRange = (dateStr: string, range: string): boolean => {
+    if (range === 'all') return true;
+    const date = new Date(dateStr).getTime();
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
+    switch (range) {
+      case 'today': return now - date < oneDay;
+      case 'week': return now - date < 7 * oneDay;
+      case 'month': return now - date < 30 * oneDay;
+      case 'year': return now - date < 365 * oneDay;
+      default: return true;
+    }
+  };
+
   // 过滤后的条目
   const filteredItems = useMemo(() => {
     let result = vaultItems;
@@ -260,9 +279,29 @@ export default function Items() {
       result = result.filter((item) => item.favorite);
     }
 
-    // 标签筛选
+    // 单标签筛选（URL 参数模式）
     if (tagFilter) {
       result = result.filter((item) => item.tags.includes(tagFilter));
+    }
+
+    // 多标签组合筛选（高级搜索）
+    if (selectedTags.length > 0) {
+      result = result.filter((item) => {
+        if (tagFilterMode === 'all') {
+          return selectedTags.every((tag) => item.tags.includes(tag));
+        }
+        return selectedTags.some((tag) => item.tags.includes(tag));
+      });
+    }
+
+    // 修改时间范围筛选
+    if (modifiedDateFilter !== 'all') {
+      result = result.filter((item) => isWithinDateRange(item.updatedAt, modifiedDateFilter));
+    }
+
+    // 创建时间范围筛选
+    if (createdDateFilter !== 'all') {
+      result = result.filter((item) => isWithinDateRange(item.createdAt, createdDateFilter));
     }
 
     // 排序
@@ -285,7 +324,7 @@ export default function Items() {
     });
 
     return result;
-  }, [vaultItems, activeTypeFilter, selectedFolderId, searchQuery, showFavoritesOnly, tagFilter, sortBy]);
+  }, [vaultItems, activeTypeFilter, selectedFolderId, searchQuery, showFavoritesOnly, tagFilter, selectedTags, tagFilterMode, modifiedDateFilter, createdDateFilter, sortBy]);
 
   // 分页状态
   const PAGE_SIZE = 50;
@@ -418,6 +457,17 @@ export default function Items() {
     moveSelected(folderId);
     setShowMoveDropdown(false);
   }, [moveSelected]);
+
+  // 批量打标签
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const handleBatchTag = useCallback((tag: string) => {
+    tagSelected(tag);
+    setShowTagDropdown(false);
+  }, [tagSelected]);
+  const handleBatchUntag = useCallback((tag: string) => {
+    untagSelected(tag);
+    setShowTagDropdown(false);
+  }, [untagSelected]);
 
   // 批量导出
   const handleBatchExport = useCallback(() => {
@@ -872,20 +922,59 @@ export default function Items() {
             {/* 高级筛选 */}
             {showAdvancedSearch && (
               <div className="mt-3 p-4 bg-vault-surface/50 border border-vault-border rounded-lg space-y-4">
-                <div className="flex items-center gap-4 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-vault-text-muted">密码强度:</span>
-                    <select
-                      value={passwordStrengthFilter}
-                      onChange={(e) => setPasswordStrengthFilter(e.target.value)}
-                      className="bg-vault-surface border border-vault-border rounded-lg px-3 py-1.5 text-sm text-vault-text focus:outline-none focus:border-vault-accent"
-                    >
-                      <option value="all">全部</option>
-                      <option value="weak">弱</option>
-                      <option value="medium">中等</option>
-                      <option value="strong">强</option>
-                    </select>
+                {/* 标签组合筛选 */}
+                {allTags.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-vault-text-muted">标签组合筛选</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setTagFilterMode('any')}
+                          className={cn(
+                            'text-[10px] px-2 py-0.5 rounded transition-colors',
+                            tagFilterMode === 'any'
+                              ? 'bg-vault-accent text-white'
+                              : 'bg-vault-hover text-vault-text-muted hover:text-vault-text'
+                          )}
+                        >
+                          任一
+                        </button>
+                        <button
+                          onClick={() => setTagFilterMode('all')}
+                          className={cn(
+                            'text-[10px] px-2 py-0.5 rounded transition-colors',
+                            tagFilterMode === 'all'
+                              ? 'bg-vault-accent text-white'
+                              : 'bg-vault-hover text-vault-text-muted hover:text-vault-text'
+                          )}
+                        >
+                          全部
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {allTags.map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={() => {
+                            setSelectedTags((prev) =>
+                              prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+                            );
+                          }}
+                          className={cn(
+                            'text-xs px-2.5 py-1 rounded-full transition-colors',
+                            selectedTags.includes(tag)
+                              ? 'bg-vault-accent/20 text-vault-accent border border-vault-accent/30'
+                              : 'bg-vault-hover text-vault-text-muted border border-transparent hover:text-vault-text'
+                          )}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+                )}
+                <div className="flex items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-vault-text-muted">修改时间:</span>
                     <select
@@ -900,10 +989,27 @@ export default function Items() {
                       <option value="year">本年</option>
                     </select>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-vault-text-muted">创建时间:</span>
+                    <select
+                      value={createdDateFilter}
+                      onChange={(e) => setCreatedDateFilter(e.target.value)}
+                      className="bg-vault-surface border border-vault-border rounded-lg px-3 py-1.5 text-sm text-vault-text focus:outline-none focus:border-vault-accent"
+                    >
+                      <option value="all">全部</option>
+                      <option value="today">今天</option>
+                      <option value="week">本周</option>
+                      <option value="month">本月</option>
+                      <option value="year">本年</option>
+                    </select>
+                  </div>
                   <button
                     onClick={() => {
                       setPasswordStrengthFilter('all');
                       setModifiedDateFilter('all');
+                      setCreatedDateFilter('all');
+                      setSelectedTags([]);
+                      setTagFilterMode('any');
                     }}
                     className="text-xs text-vault-accent hover:text-vault-accent-hover"
                   >
@@ -1018,6 +1124,13 @@ export default function Items() {
                   移动到
                 </button>
                 <button
+                  onClick={() => setShowTagDropdown(!showTagDropdown)}
+                  className="vault-btn-secondary flex items-center gap-1 text-sm"
+                >
+                  <Tag size={14} />
+                  标签
+                </button>
+                <button
                   onClick={handleBatchExport}
                   className="vault-btn-secondary flex items-center gap-1 text-sm"
                 >
@@ -1052,6 +1165,42 @@ export default function Items() {
                         onClick={() => handleBatchMove(folder.id)}
                       >
                         {folder.name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* 批量标签下拉菜单 */}
+              {showTagDropdown && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowTagDropdown(false)} />
+                  <div className="absolute right-4 top-full mt-1 z-20 w-56 bg-vault-surface border border-vault-border rounded-lg shadow-lg py-2">
+                    <p className="px-3 py-1 text-xs text-vault-text-muted font-medium">添加标签</p>
+                    {allTags.length > 0 ? (
+                      allTags.map((tag) => (
+                        <button
+                          key={`add-${tag}`}
+                          className="w-full text-left px-3 py-1.5 text-sm text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
+                          onClick={() => handleBatchTag(tag)}
+                        >
+                          <span className="vault-badge bg-vault-accent/20 text-vault-accent text-xs mr-2">+</span>
+                          {tag}
+                        </button>
+                      ))
+                    ) : (
+                      <p className="px-3 py-1 text-xs text-vault-text-muted">暂无标签</p>
+                    )}
+                    <div className="border-t border-vault-border my-1" />
+                    <p className="px-3 py-1 text-xs text-vault-text-muted font-medium">移除标签</p>
+                    {allTags.map((tag) => (
+                      <button
+                        key={`remove-${tag}`}
+                        className="w-full text-left px-3 py-1.5 text-sm text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
+                        onClick={() => handleBatchUntag(tag)}
+                      >
+                        <span className="vault-badge bg-vault-error/20 text-vault-error text-xs mr-2">-</span>
+                        {tag}
                       </button>
                     ))}
                   </div>
