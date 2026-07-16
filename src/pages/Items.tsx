@@ -38,6 +38,7 @@ import ContextMenu, { type ContextMenuItem } from '@/components/ContextMenu';
 import { useItems, useVaults, useFolders } from '@/store';
 import { cn } from '@/lib/utils';
 import { secureCopy } from '@/utils/clipboard';
+import { toast } from '@/components/Toast';
 import type { ItemType, VaultItem } from '@/types';
 
 // ==================== 常量定义 ====================
@@ -122,7 +123,7 @@ export default function Items() {
 
   const { list: items, searchQuery, setSearchQuery, setItemTypeFilter, setTagFilter, tagFilter, selectAll, clearSelection, deleteSelected, moveSelected, exportSelected, tagSelected, untagSelected, selectedItemIds, toggleFavorite, deleteItem, incrementUsage, reorderItems } = useItems();
   const { list: vaults, currentVaultId, setCurrentVault } = useVaults();
-  const { list: folders } = useFolders();
+  const { list: folders, addFolder } = useFolders();
 
   // 从 URL 参数推断当前类型筛选
   const activeTypeFilter = useMemo(() => {
@@ -148,6 +149,10 @@ export default function Items() {
   const [showMoveDropdown, setShowMoveDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  
+  // 新建文件夹状态
+  const [showNewFolderModal, setShowNewFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
 
   // 拖拽排序状态
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -458,6 +463,18 @@ export default function Items() {
     moveSelected(folderId);
     setShowMoveDropdown(false);
   }, [moveSelected]);
+
+  // 创建文件夹
+  const handleCreateFolder = useCallback(() => {
+    if (!newFolderName.trim()) return;
+    addFolder({
+      name: newFolderName.trim(),
+      vaultId: currentVaultId,
+    });
+    toast.success(`文件夹 "${newFolderName.trim()}" 已创建`);
+    setShowNewFolderModal(false);
+    setNewFolderName('');
+  }, [newFolderName, addFolder, currentVaultId]);
 
   // 批量打标签
   const [showTagDropdown, setShowTagDropdown] = useState(false);
@@ -1322,6 +1339,17 @@ export default function Items() {
                         <span className="text-xs text-vault-text-muted">{folder.itemCount}</span>
                       </button>
                     ))}
+                    <div className="border-t border-vault-border my-1" />
+                    <button
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-vault-accent hover:bg-vault-accent/10 transition-colors"
+                      onClick={() => {
+                        setShowFolderDropdown(false);
+                        setShowNewFolderModal(true);
+                      }}
+                    >
+                      <Plus size={14} />
+                      <span>新建文件夹</span>
+                    </button>
                   </div>
                 </>
               )}
@@ -1426,6 +1454,60 @@ export default function Items() {
           items={contextMenuItems}
           onClose={closeContextMenu}
         />
+      )}
+
+      {/* 新建文件夹模态框 */}
+      {showNewFolderModal && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => {
+              setShowNewFolderModal(false);
+              setNewFolderName('');
+            }}
+          />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md">
+            <div className="vault-card p-6">
+              <h3 className="text-lg font-semibold text-vault-text mb-4">新建文件夹</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-vault-text-secondary mb-2">文件夹名称</label>
+                  <input
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    placeholder="输入文件夹名称"
+                    className="w-full vault-input"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newFolderName.trim()) {
+                        handleCreateFolder();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => {
+                      setShowNewFolderModal(false);
+                      setNewFolderName('');
+                    }}
+                    className="px-4 py-2 text-sm text-vault-text-secondary hover:text-vault-text transition-colors"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleCreateFolder}
+                    disabled={!newFolderName.trim()}
+                    className="px-4 py-2 text-sm bg-vault-accent text-white rounded-lg hover:bg-vault-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    创建
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </AppLayout>
   );

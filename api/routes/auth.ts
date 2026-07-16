@@ -18,11 +18,6 @@ interface User {
   createdAt: string;
 }
 
-interface TokenPayload {
-  userId: string;
-  email: string;
-}
-
 const users: User[] = [];
 const loginAttempts: Record<string, { attempts: number; lastAttempt: number }> = {};
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -48,14 +43,6 @@ async function verifyPassword(password: string, saltA: string, saltB: string, ha
 
 function createJWT(userId: string, email: string): string {
   return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-}
-
-function verifyJWT(token: string): TokenPayload | null {
-  try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
-  } catch {
-    return null;
-  }
 }
 
 function checkRateLimit(email: string): { allowed: boolean; remaining: number } {
