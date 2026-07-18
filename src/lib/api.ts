@@ -1,4 +1,4 @@
-import { toast } from '@/components/Toast';
+import { toast } from '@/components/toastStore';
 
 const API_BASE_URL = 'http://localhost:3001';
 const REQUEST_TIMEOUT = 10000;

@@ -26,7 +26,7 @@ import AppLayout from '@/components/AppLayout';
 import { useStore } from '@/store';
 import { cn } from '@/lib/utils';
 import type { Vault } from '@/types';
-import { toast } from '@/components/Toast';
+import { toast } from '@/components/toastStore';
 
 // 图标选项
 const iconOptions = [

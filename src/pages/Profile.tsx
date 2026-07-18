@@ -28,7 +28,7 @@ import {
 import AppLayout from '@/components/AppLayout';
 import { useProfile, useAuth, useSubscription, useStore } from '@/store';
 import { cn } from '@/lib/utils';
-import { toast } from '@/components/Toast';
+import { toast } from '@/components/toastStore';
 
 // 设备类型图标映射
 const deviceIcons: Record<string, React.ReactNode> = {

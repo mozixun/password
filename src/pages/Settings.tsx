@@ -48,7 +48,7 @@ import {
   type BackupSnapshot,
 } from '@/utils/backup';
 import type { VaultItem } from '@/types';
-import { toast } from '@/components/Toast';
+import { toast } from '@/components/toastStore';
 
 // 设置侧边栏项目类型
 type SettingsSection = 'account' | 'security' | 'appearance' | 'importExport' | 'backup' | 'language' | 'about';

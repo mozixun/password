@@ -29,7 +29,7 @@ import { useWatchtower, useItems, useProfile } from '@/store';
 import type { VaultItem, ItemType } from '@/types';
 import { cn } from '@/lib/utils';
 import { checkEmailBreaches, type BreachResult } from '@/utils/breachDetection';
-import { toast } from '@/components/Toast';
+import { toast } from '@/components/toastStore';
 
 // Tab 类型定义
 type WatchtowerTab = 'weak' | 'reused' | 'compromised' | 'expired' | 'missing_2fa';

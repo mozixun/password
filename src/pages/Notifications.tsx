@@ -15,7 +15,7 @@ import {
 import AppLayout from '@/components/AppLayout';
 import { useNotifications } from '@/store';
 import { cn } from '@/lib/utils';
-import { toast } from '@/components/Toast';
+import { toast } from '@/components/toastStore';
 
 type NotificationType = 'subscription' | 'security' | 'system';
 

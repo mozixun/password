@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   KeyRound,
@@ -67,7 +67,7 @@ function getIconBg(type: ItemType): string {
   return bgMap[type];
 }
 
-export default function ItemCard({ item, onContextMenu }: ItemCardProps) {
+function ItemCardComponent({ item, onContextMenu }: ItemCardProps) {
   const navigate = useNavigate();
   const { selectedItemIds, toggleSelect, deleteItem, incrementUsage } = useItems();
   const isSelected = selectedItemIds.includes(item.id);
@@ -226,3 +226,6 @@ export default function ItemCard({ item, onContextMenu }: ItemCardProps) {
     </div>
   );
 }
+
+const ItemCard = memo(ItemCardComponent);
+export default ItemCard;

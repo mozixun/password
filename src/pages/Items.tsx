@@ -38,7 +38,7 @@ import ContextMenu, { type ContextMenuItem } from '@/components/ContextMenu';
 import { useItems, useVaults, useFolders } from '@/store';
 import { cn } from '@/lib/utils';
 import { secureCopy } from '@/utils/clipboard';
-import { toast } from '@/components/Toast';
+import { toast } from '@/components/toastStore';
 import type { ItemType, VaultItem } from '@/types';
 
 // ==================== 常量定义 ====================

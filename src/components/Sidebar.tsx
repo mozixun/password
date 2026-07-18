@@ -1,5 +1,5 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Shield,
   Search,
@@ -105,6 +105,19 @@ export default function Sidebar() {
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
   const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // 点击外部关闭文件夹菜单
+  useEffect(() => {
+    if (!activeFolderMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setActiveFolderMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [activeFolderMenu]);
 
   const currentVaultId = vaults.currentVaultId;
   const currentFolders = folders.list.filter(f => f.vaultId === currentVaultId);
@@ -277,7 +290,7 @@ export default function Sidebar() {
                     </NavLink>
                   )}
                   {activeFolderMenu === folder.id && (
-                    <div className="absolute right-0 top-full mt-1 w-36 bg-vault-surface border border-vault-border rounded-lg shadow-xl py-1 z-50 animate-fade-in">
+                    <div ref={menuRef} className="absolute right-0 top-full mt-1 w-36 bg-vault-surface border border-vault-border rounded-lg shadow-xl py-1 z-50 animate-fade-in">
                       <button
                         onClick={() => handleStartEditFolder(folder.id, folder.name)}
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-vault-text hover:bg-vault-hover transition-colors"

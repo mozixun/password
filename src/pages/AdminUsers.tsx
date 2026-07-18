@@ -3,7 +3,7 @@ import { Search, Plus, Edit, Trash2, Mail, Shield, Check, X, Crown, Eye } from '
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
 import { cn } from '@/lib/utils';
-import { toast } from '@/components/Toast';
+import { toast } from '@/components/toastStore';
 import { useStore } from '@/store';
 
 interface User {

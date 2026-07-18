@@ -1,77 +1,36 @@
-import { create } from 'zustand';
 import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { useToastStore, type Toast, type ToastType } from './toastStore';
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
-
-export interface Toast {
-  id: string;
-  type: ToastType;
-  message: string;
-  duration: number;
-}
-
-interface ToastState {
-  toasts: Toast[];
-  addToast: (toast: Omit<Toast, 'id' | 'duration'> & { duration?: number }) => string;
-  removeToast: (id: string) => void;
-  clearAll: () => void;
-}
-
-export const useToastStore = create<ToastState>((set) => ({
-  toasts: [],
-  addToast: (toast) => {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const newToast: Toast = {
-      id,
-      duration: toast.duration ?? 3000,
-      ...toast,
-    };
-    set((state) => ({ toasts: [...state.toasts, newToast] }));
-    return id;
-  },
-  removeToast: (id) => {
-    set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
-  },
-  clearAll: () => {
-    set({ toasts: [] });
-  },
-}));
-
-export function toast(message: string, type: ToastType = 'info', duration?: number): string {
-  return useToastStore.getState().addToast({ type, message, duration });
-}
-
-toast.success = (message: string, duration?: number) => toast(message, 'success', duration);
-toast.error = (message: string, duration?: number) => toast(message, 'error', duration);
-toast.warning = (message: string, duration?: number) => toast(message, 'warning', duration);
-toast.info = (message: string, duration?: number) => toast(message, 'info', duration);
-
-const typeConfig: Record<ToastType, { icon: React.ReactNode; bgColor: string; borderColor: string; iconColor: string }> = {
+const typeConfig: Record<ToastType, { icon: React.ReactNode; bgColor: string; borderColor: string; iconColor: string; barColor: string }> = {
   success: {
     icon: <CheckCircle size={20} />,
     bgColor: 'bg-vault-success/10',
     borderColor: 'border-vault-success/20',
     iconColor: 'text-vault-success',
+    barColor: 'bg-vault-success',
   },
   error: {
     icon: <AlertCircle size={20} />,
     bgColor: 'bg-vault-error/10',
     borderColor: 'border-vault-error/20',
     iconColor: 'text-vault-error',
+    barColor: 'bg-vault-error',
   },
   warning: {
     icon: <AlertTriangle size={20} />,
     bgColor: 'bg-vault-warn/10',
     borderColor: 'border-vault-warn/20',
     iconColor: 'text-vault-warn',
+    barColor: 'bg-vault-warn',
   },
   info: {
     icon: <Info size={20} />,
     bgColor: 'bg-vault-accent/10',
     borderColor: 'border-vault-accent/20',
     iconColor: 'text-vault-accent',
+    barColor: 'bg-vault-accent',
   },
 };
 
@@ -95,26 +54,45 @@ export function ToastContainer() {
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   const config = typeConfig[toast.type];
   const [isLeaving, setIsLeaving] = useState(false);
+  const [progress, setProgress] = useState(100);
+  const startTimeRef = useRef<number>(Date.now());
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
+    startTimeRef.current = Date.now();
     if (toast.duration > 0) {
       const timer = setTimeout(() => {
         setIsLeaving(true);
         setTimeout(onClose, 200);
       }, toast.duration);
-      return () => clearTimeout(timer);
+
+      const updateProgress = () => {
+        const elapsed = Date.now() - startTimeRef.current;
+        const remaining = Math.max(0, 100 - (elapsed / toast.duration) * 100);
+        setProgress(remaining);
+        if (remaining > 0) {
+          rafRef.current = requestAnimationFrame(updateProgress);
+        }
+      };
+      rafRef.current = requestAnimationFrame(updateProgress);
+
+      return () => {
+        clearTimeout(timer);
+        cancelAnimationFrame(rafRef.current);
+      };
     }
   }, [toast.duration, onClose]);
 
   const handleClose = () => {
     setIsLeaving(true);
+    cancelAnimationFrame(rafRef.current);
     setTimeout(onClose, 200);
   };
 
   return (
     <div
       className={cn(
-        'flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm pointer-events-auto transition-all duration-200',
+        'relative flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm pointer-events-auto transition-all duration-200 overflow-hidden',
         config.bgColor,
         config.borderColor,
         isLeaving ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0',
@@ -130,6 +108,14 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       >
         <X size={16} />
       </button>
+      {toast.duration > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/10">
+          <div
+            className={cn('h-full transition-none', config.barColor)}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }

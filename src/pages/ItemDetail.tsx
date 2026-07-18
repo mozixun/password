@@ -40,7 +40,7 @@ import type { VaultItem, ItemType, PasswordHistoryEntry, Attachment, TOTPConfig,
 import { cn } from '@/lib/utils';
 import { createPasskey, isPasskeySupported } from '@/utils/passkey';
 import { generateTOTP as generateRealTOTP, getRemainingSeconds } from '@/utils/totp';
-import { toast } from '@/components/Toast';
+import { toast } from '@/components/toastStore';
 
 // ==================== 类型图标映射 ====================
 

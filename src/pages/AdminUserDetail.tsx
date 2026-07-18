@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Shield, Calendar, Lock, Edit, Trash2, RefreshCw, FileText, KeyRound, User } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { cn } from '@/lib/utils';
-import { toast } from '@/components/Toast';
+import { toast } from '@/components/toastStore';
 
 interface User {
   id: string;

@@ -9,7 +9,8 @@ const RSA_KEY_SIZE = 2048;
 
 export function getRandomValues<T extends Uint8Array | Uint16Array | Uint32Array | Int8Array | Int16Array | Int32Array | Float32Array | Float64Array>(arr: T): T {
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    return crypto.getRandomValues(arr);
+    crypto.getRandomValues(arr as Uint8Array);
+    return arr;
   }
   for (let i = 0; i < arr.length; i++) {
     arr[i] = Math.floor(Math.random() * 0x100000000) as T[number];
@@ -157,7 +158,7 @@ export async function deriveK1(
     {
       name: 'PBKDF2',
       hash: 'SHA-256',
-      salt: saltA,
+      salt: saltA as BufferSource,
       iterations: PBKDF2_ITERATIONS,
     },
     passwordKey,
@@ -178,7 +179,7 @@ export async function deriveVaultKey(
 
   const hkdfKey = await crypto.subtle.importKey(
     'raw',
-    combined,
+    combined as BufferSource,
     'HKDF',
     false,
     ['deriveKey', 'deriveBits']
@@ -188,7 +189,7 @@ export async function deriveVaultKey(
     {
       name: 'HKDF',
       hash: 'SHA-256',
-      salt: saltB,
+      salt: saltB as BufferSource,
       info: new TextEncoder().encode('vaultkey-root-key'),
     },
     hkdfKey,
@@ -199,7 +200,7 @@ export async function deriveVaultKey(
     {
       name: 'HKDF',
       hash: 'SHA-256',
-      salt: saltB,
+      salt: saltB as BufferSource,
       info: new TextEncoder().encode('vaultkey-srp-key'),
     },
     hkdfKey,
@@ -221,7 +222,7 @@ export async function encryptAESGCM(
 
   const aesKey = await crypto.subtle.importKey(
     'raw',
-    key,
+    key as BufferSource,
     { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt']
@@ -229,7 +230,7 @@ export async function encryptAESGCM(
 
   const encoder = new TextEncoder();
   const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv, tagLength: AES_TAG_LENGTH * 8 },
+    { name: 'AES-GCM', iv: iv as BufferSource, tagLength: AES_TAG_LENGTH * 8 },
     aesKey,
     encoder.encode(plaintext)
   );
@@ -268,7 +269,7 @@ export async function decryptAESGCM(
 
   const aesKey = await crypto.subtle.importKey(
     'raw',
-    key,
+    key as BufferSource,
     { name: 'AES-GCM', length: 256 },
     false,
     ['decrypt']
@@ -280,9 +281,9 @@ export async function decryptAESGCM(
 
   try {
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv, tagLength: AES_TAG_LENGTH * 8 },
+      { name: 'AES-GCM', iv: iv as BufferSource, tagLength: AES_TAG_LENGTH * 8 },
       aesKey,
-      encryptedWithTag
+      encryptedWithTag as BufferSource
     );
 
     const decoder = new TextDecoder();
