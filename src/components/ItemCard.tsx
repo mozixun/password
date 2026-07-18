@@ -15,7 +15,6 @@ import {
   Building2,
   Database,
   CheckSquare,
-  Square,
   Trash2,
 } from 'lucide-react';
 import type { VaultItem, ItemType } from '@/types';
@@ -133,8 +132,8 @@ function ItemCardComponent({ item, onContextMenu }: ItemCardProps) {
   return (
     <div
       className={cn(
-        'vault-card p-4 cursor-pointer group relative',
-        isSelected && 'ring-2 ring-vault-accent bg-vault-accent/5'
+        'vault-card p-3 cursor-pointer group relative',
+        isSelected && 'border-vault-accent bg-vault-accent/5'
       )}
       onClick={() => {
         if (!isLongPress) handleClick();
@@ -145,44 +144,46 @@ function ItemCardComponent({ item, onContextMenu }: ItemCardProps) {
       onTouchCancel={handleTouchCancel}
     >
       <div className="flex items-start gap-3">
-        {/* 选择框 */}
+        {/* 选择框 — 方块 */}
         <button
           className={cn(
-            'w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors',
+            'w-4 h-4 rounded-none border flex items-center justify-center shrink-0 transition-colors',
             isSelected
               ? 'bg-vault-accent border-vault-accent'
-              : 'border-vault-border hover:border-vault-accent/50'
+              : 'border-vault-border-strong hover:border-vault-accent/60'
           )}
           onClick={handleSelect}
+          aria-label={isSelected ? '取消选择' : '选择项目'}
         >
-          {isSelected && <CheckSquare size={12} className="text-white" />}
-          {!isSelected && <Square size={12} className="text-transparent" />}
+          {isSelected && <CheckSquare size={10} className="text-vault-accent-fg" />}
         </button>
 
-        {/* 项目图标 */}
-        <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', getIconBg(item.type))}>
+        {/* 项目图标 — 方块 mono */}
+        <div className={cn('w-8 h-8 rounded-none flex items-center justify-center shrink-0 border', getIconBg(item.type))}>
           {getItemIcon(item.type)}
         </div>
 
         {/* 项目信息 */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-vault-text truncate">
+            <h3 className="text-log font-semibold text-vault-text truncate tracking-mono-tight">
               {item.title}
             </h3>
             {/* 收藏图标 */}
             {item.favorite && (
-              <Star size={14} className="text-vault-orange fill-vault-orange shrink-0" />
+              <Star size={12} className="text-vault-orange shrink-0" fill="currentColor" />
             )}
+            {/* 类型标记 — 哈希式 */}
+            <span className="text-hash shrink-0 hidden sm:inline">{item.type}</span>
           </div>
           {subtitle && (
-            <p className="text-xs text-vault-text-secondary mt-0.5 truncate">
+            <p className="text-hash mt-0.5 truncate">
               {subtitle}
             </p>
           )}
           {/* 标签 */}
           {item.tags && item.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="flex flex-wrap gap-1 mt-1.5">
               {item.tags.map((tag) => (
                 <span key={tag} className="vault-badge bg-vault-hover text-vault-text-secondary">
                   {tag}
@@ -194,13 +195,13 @@ function ItemCardComponent({ item, onContextMenu }: ItemCardProps) {
       </div>
 
       {/* 悬停时显示快捷操作 */}
-      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-2 right-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         {item.username && (
           <CopyButton value={item.username} itemId={item.id} />
         )}
         {item.password && (
           <button
-            className="p-1 rounded text-vault-text-muted hover:text-vault-text hover:bg-vault-hover transition-colors"
+            className="p-1 rounded-none text-vault-text-muted hover:text-vault-text hover:bg-vault-hover transition-colors"
             title="复制密码"
             onClick={async (e) => {
               e.stopPropagation();
@@ -212,15 +213,15 @@ function ItemCardComponent({ item, onContextMenu }: ItemCardProps) {
               }
             }}
           >
-            <Copy size={14} />
+            <Copy size={13} />
           </button>
         )}
         <button
-          className="p-1 rounded text-vault-text-muted hover:text-vault-warn hover:bg-vault-warn/10 transition-colors"
+          className="p-1 rounded-none text-vault-text-muted hover:text-vault-warn hover:bg-vault-warn/10 transition-colors"
           title="删除项目"
           onClick={handleDelete}
         >
-          <Trash2 size={14} />
+          <Trash2 size={13} />
         </button>
       </div>
     </div>

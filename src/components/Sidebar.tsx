@@ -154,25 +154,25 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        'flex flex-col h-screen bg-vault-surface/60 backdrop-blur-2xl border-r border-vault-border/50 transition-all duration-300 shrink-0',
+        'flex flex-col h-screen bg-vault-surface border-r border-vault-border transition-all duration-200 shrink-0',
         collapsed ? 'w-16' : 'w-60'
       )}
     >
-      {/* Logo 区域 */}
-      <div className={cn('flex items-center gap-2 px-4 h-16 border-b border-vault-border/50', collapsed ? 'justify-center' : '')}>
-        <Shield size={24} className="text-vault-accent shrink-0" />
+      {/* Logo 区域 — 终端 wordmark */}
+      <div className={cn('flex items-center gap-2 px-4 h-12 border-b border-vault-border', collapsed ? 'justify-center' : '')}>
+        <Shield size={18} className="text-vault-accent shrink-0" />
         {!collapsed && (
-          <span className="font-display font-bold text-lg text-vault-text tracking-tight">
-            VaultKey
+          <span className="font-mono font-bold text-sm text-vault-text tracking-mono-wide uppercase">
+            vaultkey
           </span>
         )}
       </div>
 
-      {/* 搜索栏 */}
+      {/* 搜索栏 — 终端 prompt */}
       {!collapsed && (
-        <div className="px-3 py-3">
-          <div className="flex items-center gap-2 bg-vault-bg border border-vault-border rounded-lg px-3 py-2 text-vault-text-muted text-sm">
-            <Search size={14} />
+        <div className="px-2 py-2 border-b border-vault-border">
+          <div className="flex items-center gap-2 bg-vault-bg border border-vault-border rounded-none px-2.5 py-1.5 text-vault-text-muted text-log">
+            <span className="text-vault-accent">$</span>
             <input
               type="text"
               placeholder={t.common.search}
@@ -186,25 +186,29 @@ export default function Sidebar() {
                 }
               }}
             />
-            <kbd className="ml-auto text-[10px] bg-vault-hover px-1.5 py-0.5 rounded text-vault-text-secondary">⌘K</kbd>
+            <kbd className="ml-auto text-[10px] bg-vault-surface border border-vault-border px-1 py-0.5 text-vault-text-secondary tracking-mono-wide">⌘K</kbd>
           </div>
         </div>
       )}
 
       {/* 折叠时的搜索图标 */}
       {collapsed && (
-        <div className="flex justify-center py-3">
+        <div className="flex justify-center py-2 border-b border-vault-border">
           <button
-            className="p-2 rounded-lg text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
+            className="p-1.5 rounded-none text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
             onClick={() => ui.toggleSidebar()}
+            aria-label={t.common.search}
           >
-            <Search size={18} />
+            <Search size={16} />
           </button>
         </div>
       )}
 
       {/* 主导航 */}
-      <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-px">
+        {!collapsed && (
+          <div className="px-2 pb-1 text-caps text-vault-text-muted">§ items</div>
+        )}
         {mainNavItems.map((item) => (
           <NavLink
             key={item.path}
@@ -219,37 +223,38 @@ export default function Sidebar() {
             title={collapsed ? t.sidebar[item.labelKey as keyof typeof t.sidebar] : undefined}
           >
             <span className="shrink-0">{item.icon}</span>
-            {!collapsed && <span className="truncate text-sm">{t.sidebar[item.labelKey as keyof typeof t.sidebar]}</span>}
+            {!collapsed && <span className="truncate text-log">{t.sidebar[item.labelKey as keyof typeof t.sidebar]}</span>}
           </NavLink>
         ))}
 
         {/* 分隔线 */}
-        <div className="my-2 border-t border-vault-border/50" />
+        <div className="my-2 border-t border-vault-border" />
 
         {/* 文件夹区域 */}
         {!collapsed && (
-          <div className="px-2">
-            <div className="flex items-center justify-between px-2 py-1.5 text-xs text-vault-text-muted font-semibold uppercase tracking-wider">
-              <span>{t.sidebar.folders}</span>
+          <div className="px-1">
+            <div className="flex items-center justify-between px-2 py-1 text-caps text-vault-text-muted">
+              <span>§ {t.sidebar.folders}</span>
               <button
                 onClick={() => setShowNewFolderModal(true)}
-                className="p-0.5 rounded hover:bg-vault-hover transition-colors"
+                className="p-0.5 rounded-none hover:bg-vault-hover hover:text-vault-text transition-colors"
                 title={t.common.newFolder}
+                aria-label={t.common.newFolder}
               >
                 <FolderPlus size={12} />
               </button>
             </div>
-            <div className="space-y-0.5 mt-1">
+            <div className="space-y-px mt-1">
               {currentFolders.map((folder) => (
                 <div key={folder.id} className="relative group">
                   {editingFolderId === folder.id ? (
-                    <div className="flex items-center gap-2 px-2 py-1.5">
-                      <FolderOpen size={14} className="text-vault-text-muted" />
+                    <div className="flex items-center gap-2 px-2 py-1.5 border border-vault-accent/40 bg-vault-accent/5">
+                      <FolderOpen size={13} className="text-vault-text-muted" />
                       <input
                         type="text"
                         value={editingFolderName}
                         onChange={(e) => setEditingFolderName(e.target.value)}
-                        className="bg-transparent outline-none text-sm text-vault-text flex-1 min-w-0"
+                        className="bg-transparent outline-none text-log text-vault-text flex-1 min-w-0"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveEditFolder();
@@ -266,43 +271,44 @@ export default function Sidebar() {
                       to={`/items?folder=${folder.id}`}
                       className={() =>
                         cn(
-                          'flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors',
+                          'flex items-center gap-2 px-2 py-1.5 rounded-none text-log transition-colors border border-transparent',
                           isNavItemActive(`/items?folder=${folder.id}`)
-                            ? 'bg-vault-accent/10 text-vault-accent'
+                            ? 'bg-vault-accent/10 text-vault-accent border-vault-border'
                             : 'text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text'
                         )
                       }
                     >
-                      <FolderOpen size={14} />
+                      <FolderOpen size={13} />
                       <span className="truncate flex-1">{folder.name}</span>
-                      <span className="text-xs text-vault-text-muted">{folder.itemCount}</span>
+                      <span className="text-[11px] text-vault-text-muted tabular-nums">{folder.itemCount}</span>
                       <button
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           setActiveFolderMenu(activeFolderMenu === folder.id ? null : folder.id);
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-vault-hover/50 transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded-none hover:bg-vault-hover/50 transition-all"
                         title="更多操作"
+                        aria-label="更多操作"
                       >
                         <MoreHorizontal size={12} />
                       </button>
                     </NavLink>
                   )}
                   {activeFolderMenu === folder.id && (
-                    <div ref={menuRef} className="absolute right-0 top-full mt-1 w-36 bg-vault-surface border border-vault-border rounded-lg shadow-xl py-1 z-50 animate-fade-in">
+                    <div ref={menuRef} className="absolute right-0 top-full mt-0.5 w-36 bg-vault-surface border border-vault-border shadow-xl py-0.5 z-50 animate-fade-in">
                       <button
                         onClick={() => handleStartEditFolder(folder.id, folder.name)}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-vault-text hover:bg-vault-hover transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-log text-vault-text hover:bg-vault-hover transition-colors"
                       >
-                        <Edit3 size={14} />
+                        <Edit3 size={13} />
                         重命名
                       </button>
                       <button
                         onClick={() => handleDeleteFolder(folder.id, folder.name)}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-vault-warn hover:bg-vault-warn/10 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-log text-vault-warn hover:bg-vault-warn/10 transition-colors"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={13} />
                         删除
                       </button>
                     </div>
@@ -310,16 +316,19 @@ export default function Sidebar() {
                 </div>
               ))}
               {currentFolders.length === 0 && (
-                <p className="px-2 py-2 text-xs text-vault-text-muted">暂无文件夹</p>
+                <p className="px-2 py-1.5 text-hash">// no folders</p>
               )}
             </div>
           </div>
         )}
 
         {/* 分隔线 */}
-        <div className="my-2 border-t border-vault-border/50" />
+        <div className="my-2 border-t border-vault-border" />
 
         {/* 工具导航 */}
+        {!collapsed && (
+          <div className="px-2 pb-1 text-caps text-vault-text-muted">§ tools</div>
+        )}
         {toolNavItems.map((item) => (
           <NavLink
             key={item.path}
@@ -334,14 +343,17 @@ export default function Sidebar() {
             title={collapsed ? t.sidebar[item.labelKey as keyof typeof t.sidebar] : undefined}
           >
             <span className="shrink-0">{item.icon}</span>
-            {!collapsed && <span className="truncate text-sm">{t.sidebar[item.labelKey as keyof typeof t.sidebar]}</span>}
+            {!collapsed && <span className="truncate text-log">{t.sidebar[item.labelKey as keyof typeof t.sidebar]}</span>}
           </NavLink>
         ))}
 
         {/* 分隔线 */}
-        <div className="my-2 border-t border-vault-border/50" />
+        <div className="my-2 border-t border-vault-border" />
 
         {/* 底部导航 */}
+        {!collapsed && (
+          <div className="px-2 pb-1 text-caps text-vault-text-muted">§ system</div>
+        )}
         {bottomNavItems.map((item) => {
           const isNotification = item.path === '/notifications';
           const showBadge = isNotification && notifications.unreadCount > 0;
@@ -361,16 +373,16 @@ export default function Sidebar() {
               <span className="shrink-0 relative">
                 {item.icon}
                 {showBadge && (
-                  <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center text-[10px] font-bold bg-vault-warn text-white rounded-full px-1">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center text-[10px] font-bold bg-vault-warn text-white px-1 tabular-nums">
                     {notifications.unreadCount > 99 ? '99+' : notifications.unreadCount}
                   </span>
                 )}
               </span>
               {!collapsed && (
-                <div className="flex items-center gap-1">
-                  <span className="truncate text-sm">{t.sidebar[item.labelKey as keyof typeof t.sidebar]}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate text-log">{t.sidebar[item.labelKey as keyof typeof t.sidebar]}</span>
                   {showBadge && (
-                    <span className="min-w-[18px] h-4 flex items-center justify-center text-[10px] font-bold bg-vault-warn text-white rounded-full px-1.5">
+                    <span className="min-w-[18px] h-4 flex items-center justify-center text-[10px] font-bold bg-vault-warn text-white px-1 tabular-nums">
                       {notifications.unreadCount}
                     </span>
                   )}
@@ -382,24 +394,24 @@ export default function Sidebar() {
       </nav>
 
       {/* 底部：用户信息 + 锁定 + 折叠按钮 */}
-      <div className="border-t border-vault-border p-2 space-y-1">
-        {/* 用户信息 */}
+      <div className="border-t border-vault-border p-1.5 space-y-px">
+        {/* 用户信息 — 终端 user@host 样式 */}
         <button
           onClick={() => navigate('/profile')}
           className={cn(
-            'flex items-center gap-2 px-2 py-2 rounded-lg w-full transition-colors',
-            collapsed ? 'justify-center' : '',
-            'hover:bg-vault-hover'
+            'flex items-center gap-2 px-2 py-1.5 rounded-none w-full transition-colors border border-transparent hover:bg-vault-hover hover:border-vault-border',
+            collapsed ? 'justify-center' : ''
           )}
+          title={collapsed ? auth.email : undefined}
         >
-          {/* 用户头像 */}
-          <div className="w-8 h-8 rounded-full bg-vault-accent/20 flex items-center justify-center shrink-0">
-            <span className="text-vault-accent text-xs font-semibold">
-              {auth.email.charAt(0).toUpperCase()}
+          {/* 用户头像 — 方块 mono */}
+          <div className="w-6 h-6 rounded-none bg-vault-accent/15 border border-vault-accent/30 flex items-center justify-center shrink-0">
+            <span className="text-vault-accent text-[11px] font-bold uppercase">
+              {auth.email.charAt(0)}
             </span>
           </div>
           {!collapsed && (
-            <span className="text-sm text-vault-text-secondary truncate flex-1 text-left">
+            <span className="text-log text-vault-text-secondary truncate flex-1 text-left">
               {auth.email}
             </span>
           )}
@@ -409,61 +421,62 @@ export default function Sidebar() {
         <button
           onClick={auth.lock}
           className={cn(
-            'flex items-center gap-2 px-2 py-2 rounded-lg w-full text-vault-text-muted hover:text-vault-warn hover:bg-vault-warn/10 transition-colors',
+            'flex items-center gap-2 px-2 py-1.5 rounded-none w-full text-vault-text-muted hover:text-vault-warn hover:bg-vault-warn/10 hover:border-vault-warn/30 border border-transparent transition-colors',
             collapsed ? 'justify-center' : ''
           )}
           title={t.common.lock}
         >
-          <Lock size={16} />
-          {!collapsed && <span className="text-sm">{t.common.lock}</span>}
+          <Lock size={14} />
+          {!collapsed && <span className="text-log uppercase tracking-mono-wide">{t.common.lock}</span>}
         </button>
 
         {/* 折叠/展开按钮 */}
         <button
           onClick={toggleSidebar}
           className={cn(
-            'flex items-center gap-2 px-2 py-2 rounded-lg text-vault-text-muted hover:bg-vault-hover hover:text-vault-text transition-colors w-full',
+            'flex items-center gap-2 px-2 py-1.5 rounded-none text-vault-text-muted hover:bg-vault-hover hover:text-vault-text hover:border-vault-border border border-transparent transition-colors w-full',
             collapsed ? 'justify-center' : ''
           )}
           title={collapsed ? t.common.expandSidebar : t.common.collapseSidebar}
         >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          {!collapsed && <span className="text-sm">{t.common.collapseSidebar}</span>}
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          {!collapsed && <span className="text-log uppercase tracking-mono-wide">{t.common.collapseSidebar}</span>}
         </button>
       </div>
 
-      {/* 新建文件夹弹窗 */}
+      {/* 新建文件夹弹窗 — 终端对话框 */}
       {showNewFolderModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-vault-surface border border-vault-border rounded-xl p-6 w-80 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-vault-text">{t.common.newFolder}</h3>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-vault-surface border border-vault-border rounded-none p-5 w-80 shadow-2xl animate-scale-in">
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-vault-border">
+              <h3 className="text-caps text-vault-text">§ {t.common.newFolder}</h3>
               <button
                 onClick={() => setShowNewFolderModal(false)}
-                className="p-1 rounded hover:bg-vault-hover transition-colors"
+                className="p-1 rounded-none hover:bg-vault-hover transition-colors"
+                aria-label="关闭"
               >
-                <X size={18} className="text-vault-text-muted" />
+                <X size={14} className="text-vault-text-muted" />
               </button>
             </div>
             <input
               type="text"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder={t.common.newFolder}
-              className="vault-input w-full mb-4"
+              placeholder="folder-name"
+              className="vault-input w-full mb-4 text-log"
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
             />
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowNewFolderModal(false)}
-                className="vault-btn-secondary flex-1 text-sm"
+                className="vault-btn-secondary flex-1 text-log uppercase tracking-mono-wide"
               >
                 {t.common.cancel}
               </button>
               <button
                 onClick={handleCreateFolder}
-                className="vault-btn-primary flex-1 text-sm"
+                className="vault-btn-primary flex-1 text-log uppercase tracking-mono-wide"
                 disabled={!newFolderName.trim()}
               >
                 {t.common.create}

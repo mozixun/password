@@ -14,12 +14,14 @@ export default {
           surface: "rgb(var(--vault-surface))",
           card: "rgb(var(--vault-card))",
           border: "rgb(var(--vault-border))",
+          "border-strong": "rgb(var(--vault-border-strong))",
           hover: "rgb(var(--vault-hover))",
           glass: "rgb(var(--vault-glass))",
           "glass-border": "rgb(var(--vault-glass-border))",
           accent: "rgb(var(--vault-accent))",
           "accent-hover": "rgb(var(--vault-accent-hover))",
           "accent-dim": "rgb(var(--vault-accent-dim))",
+          "accent-fg": "rgb(var(--vault-accent-fg))",
           warn: "rgb(var(--vault-warn))",
           "warn-dim": "rgb(var(--vault-warn-dim))",
           orange: "rgb(var(--vault-orange))",
@@ -33,21 +35,30 @@ export default {
         },
       },
       fontFamily: {
-        display: ["Plus Jakarta Sans", "SF Pro Display", "system-ui", "sans-serif"],
-        body: ["DM Sans", "SF Pro Text", "system-ui", "sans-serif"],
+        // Industrial Mono: JetBrains Mono everywhere, paired with no decorative face.
+        mono: ['"JetBrains Mono"', '"SFMono-Regular"', '"Menlo"', 'monospace'],
+        display: ['"JetBrains Mono"', '"SFMono-Regular"', 'monospace'],
+        body: ['"JetBrains Mono"', '"SFMono-Regular"', 'monospace'],
+        sans: ['"JetBrains Mono"', '"SFMono-Regular"', 'monospace'],
+      },
+      letterSpacing: {
+        'mono-tight': '-0.01em',
+        'mono-wide': '0.08em',
+        'mono-caps': '0.16em',
+      },
+      borderRadius: {
+        // Sharp industrial corners — no rounded-2xl slop.
+        'none': '0px',
+        'xs': '1px',
+        'sm': '2px',
       },
       animation: {
-        "fade-in": "fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        "slide-up": "slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        "slide-in-left": "slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        "pulse-glow": "pulseGlow 2s ease-in-out infinite",
-        "float": "float 3s ease-in-out infinite",
-        "shimmer": "shimmer 2s ease-in-out infinite",
-        "scale-in": "scaleIn 0.2s ease-out",
-        "bounce-subtle": "bounceSubtle 0.5s ease-in-out",
-        "glass-expand": "glassExpand 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-        "spring-bounce": "springBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        "glow-flow": "glowFlow 6s ease-in-out infinite",
+        "fade-in": "fadeIn 120ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-up": "slideUp 140ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-in-left": "slideInLeft 140ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "scale-in": "scaleIn 100ms ease-out",
+        "caret-blink": "caretBlink 1.1s steps(1) infinite",
+        "ticker": "ticker 600ms cubic-bezier(0.4, 0, 0.2, 1)",
       },
       keyframes: {
         fadeIn: {
@@ -55,45 +66,26 @@ export default {
           "100%": { opacity: "1" },
         },
         slideUp: {
-          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "0%": { opacity: "0", transform: "translateY(4px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         slideInLeft: {
-          "0%": { opacity: "0", transform: "translateX(-10px)" },
+          "0%": { opacity: "0", transform: "translateX(-4px)" },
           "100%": { opacity: "1", transform: "translateX(0)" },
         },
-        pulseGlow: {
-          "0%, 100%": { boxShadow: "0 0 20px rgba(167, 139, 250, 0.15)" },
-          "50%": { boxShadow: "0 0 40px rgba(167, 139, 250, 0.3)" },
-        },
-        float: {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-6px)" },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
-        },
         scaleIn: {
-          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "0%": { opacity: "0", transform: "scale(0.98)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
-        bounceSubtle: {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-3px)" },
+        // Terminal caret for log/empty states — the one signature motion moment.
+        caretBlink: {
+          "0%, 50%": { opacity: "1" },
+          "50.01%, 100%": { opacity: "0" },
         },
-        glassExpand: {
-          "0%": { opacity: "0", transform: "scale(0.95)", filter: "blur(8px)" },
-          "100%": { opacity: "1", transform: "scale(1)", filter: "blur(0)" },
-        },
-        springBounce: {
-          "0%": { transform: "scale(0.95)" },
-          "50%": { transform: "scale(1.05)" },
-          "100%": { transform: "scale(1)" },
-        },
-        glowFlow: {
-          "0%, 100%": { backgroundPosition: "0% 50%" },
-          "50%": { backgroundPosition: "100% 50%" },
+        // Monospace number ticker for counts/scores.
+        ticker: {
+          "0%": { opacity: "0", transform: "translateY(-6px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
       },
     },

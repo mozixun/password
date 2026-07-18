@@ -92,24 +92,28 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   return (
     <div
       className={cn(
-        'relative flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm pointer-events-auto transition-all duration-200 overflow-hidden',
-        config.bgColor,
+        'relative flex items-start gap-2.5 px-3 py-2 rounded-none border shadow-lg pointer-events-auto transition-opacity duration-150 overflow-hidden bg-vault-surface',
         config.borderColor,
-        isLeaving ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0',
+        isLeaving ? 'opacity-0' : 'opacity-100',
       )}
       role="alert"
     >
       <span className={cn('shrink-0 mt-0.5', config.iconColor)}>{config.icon}</span>
-      <span className="flex-1 text-sm text-vault-text break-words">{toast.message}</span>
+      <div className="flex-1 min-w-0">
+        <div className="text-caps mb-0.5" style={{ color: 'rgb(var(--vault-accent))' }}>
+          {toast.type}
+        </div>
+        <span className="text-log text-vault-text break-words block">{toast.message}</span>
+      </div>
       <button
         onClick={handleClose}
-        className="shrink-0 p-0.5 rounded text-vault-text-muted hover:text-vault-text transition-colors"
+        className="shrink-0 p-0.5 rounded-none text-vault-text-muted hover:text-vault-text transition-colors"
         aria-label="关闭通知"
       >
-        <X size={16} />
+        <X size={14} />
       </button>
       {toast.duration > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/10">
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-vault-border">
           <div
             className={cn('h-full transition-none', config.barColor)}
             style={{ width: `${progress}%` }}

@@ -640,10 +640,10 @@ export default function Items() {
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="vault-card p-4 animate-pulse">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-vault-hover shrink-0" />
+            <div className="w-9 h-9 rounded-none bg-vault-hover shrink-0" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-vault-hover rounded w-2/3" />
-              <div className="h-3 bg-vault-hover rounded w-1/2" />
+              <div className="h-4 bg-vault-hover rounded-none w-2/3" />
+              <div className="h-3 bg-vault-hover rounded-none w-1/2" />
             </div>
           </div>
         </div>
@@ -655,10 +655,10 @@ export default function Items() {
 
   const renderEmpty = () => (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 rounded-full bg-vault-hover flex items-center justify-center mb-4">
+      <div className="w-16 h-16 rounded-none border border-vault-border bg-vault-hover flex items-center justify-center mb-4">
         <FolderOpen size={28} className="text-vault-text-muted" />
       </div>
-      <h3 className="text-base font-medium text-vault-text mb-1">没有找到项目</h3>
+      <h3 className="text-log text-vault-text-muted mb-1">// no items found</h3>
       <p className="text-sm text-vault-text-secondary mb-4">
         {searchQuery || activeTypeFilter !== 'all' || tagFilter
           ? '尝试调整筛选条件或搜索关键词'
@@ -666,7 +666,7 @@ export default function Items() {
       </p>
       {!searchQuery && activeTypeFilter === 'all' && !tagFilter && (
         <button
-          className="vault-btn-primary flex items-center gap-1.5 text-sm py-2 px-4"
+          className="vault-btn-primary flex items-center gap-1.5 text-log py-2 px-4"
           onClick={handleNewItem}
         >
           <Plus size={16} />
@@ -734,7 +734,7 @@ export default function Items() {
         )}
 
         {/* 图标 */}
-        <div className="w-8 h-8 rounded-lg bg-vault-accent/15 text-vault-accent flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded-none bg-vault-accent/15 text-vault-accent flex items-center justify-center shrink-0">
           {getItemTypeIcon(item.type)}
         </div>
 
@@ -793,27 +793,28 @@ export default function Items() {
       <div className="flex gap-6 h-full">
         {/* 主内容区域 */}
         <div className="flex-1 min-w-0">
-          {/* 顶部：标题 + 操作 */}
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold text-vault-text">{pageTitle}</h1>
-              <span className="text-xs font-medium bg-vault-hover text-vault-text-secondary px-2 py-0.5 rounded-full">
-                {filteredItems.length}
+          {/* 顶部：标题 + 操作 — 终端日志头 */}
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-vault-border">
+            <div className="flex items-baseline gap-3">
+              <span className="text-caps text-vault-text-muted">§</span>
+              <h1 className="text-log font-bold text-vault-text tracking-mono-tight uppercase">{pageTitle}</h1>
+              <span className="text-hash tabular-nums">
+                [{filteredItems.length} records]
               </span>
             </div>
 
             <div className="flex items-center gap-2">
               {/* 新建项目按钮 */}
               <button
-                className="vault-btn-primary flex items-center gap-1.5 text-sm py-1.5 px-3"
+                className="vault-btn-primary flex items-center gap-1.5 text-log uppercase tracking-mono-wide py-1.5 px-3"
                 onClick={handleNewItem}
               >
-                <Plus size={16} />
-                新建项目
+                <Plus size={14} />
+                new
               </button>
 
-              {/* 视图切换 */}
-              <div className="flex items-center border border-vault-border rounded-lg overflow-hidden">
+              {/* 视图切换 — 锐角分段 */}
+              <div className="flex items-center border border-vault-border rounded-none overflow-hidden">
                 <button
                   className={cn(
                     'p-1.5 transition-colors',
@@ -823,9 +824,11 @@ export default function Items() {
                   )}
                   onClick={() => setViewMode('grid')}
                   title="网格视图"
+                  aria-label="网格视图"
                 >
-                  <LayoutGrid size={16} />
+                  <LayoutGrid size={14} />
                 </button>
+                <div className="w-px h-4 bg-vault-border" />
                 <button
                   className={cn(
                     'p-1.5 transition-colors',
@@ -835,8 +838,9 @@ export default function Items() {
                   )}
                   onClick={() => setViewMode('list')}
                   title="列表视图"
+                  aria-label="列表视图"
                 >
-                  <List size={16} />
+                  <List size={14} />
                 </button>
               </div>
             </div>
@@ -844,15 +848,15 @@ export default function Items() {
 
           {/* 搜索和筛选栏 */}
           <div className="space-y-3 mb-5">
-            {/* 搜索框 */}
+            {/* 搜索框 — 终端 prompt */}
             <div className="relative">
               <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-vault-text-muted" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-vault-accent text-log font-semibold">$</span>
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="w-full bg-vault-surface border border-vault-border rounded-lg pl-9 pr-28 py-2 text-sm text-vault-text placeholder:text-vault-text-muted focus:outline-none focus:border-vault-accent/50 focus:ring-1 focus:ring-vault-accent/25 transition-colors"
-                  placeholder="搜索项目..."
+                  className="w-full bg-vault-surface border border-vault-border rounded-none pl-8 pr-28 py-2 text-log text-vault-text placeholder:text-vault-text-muted focus:outline-none focus:border-vault-accent transition-colors"
+                  placeholder="grep items..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -873,31 +877,32 @@ export default function Items() {
                   <button
                     onClick={() => setSearchQuery('')}
                     className="absolute right-10 top-1/2 -translate-y-1/2 text-vault-text-muted hover:text-vault-text"
+                    aria-label="清除搜索"
                   >
-                    <X size={14} />
+                    <X size={13} />
                   </button>
                 )}
                 <button
                   onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
                   className={cn(
-                    'absolute right-3 top-1/2 -translate-y-1/2 text-xs px-2 py-0.5 rounded transition-colors',
+                    'absolute right-3 top-1/2 -translate-y-1/2 text-caps px-2 py-0.5 rounded-none border transition-colors',
                     showAdvancedSearch
-                      ? 'bg-vault-accent text-white'
-                      : 'bg-vault-hover text-vault-text-secondary hover:text-vault-text'
+                      ? 'bg-vault-accent text-vault-accent-fg border-vault-accent'
+                      : 'bg-vault-bg text-vault-text-secondary border-vault-border hover:text-vault-text hover:border-vault-border-strong'
                   )}
                 >
-                  高级
+                  advanced
                 </button>
-                <kbd className="absolute right-24 top-1/2 -translate-y-1/2 text-[10px] bg-vault-hover px-1.5 py-0.5 rounded text-vault-text-secondary pointer-events-none">
+                <kbd className="absolute right-24 top-1/2 -translate-y-1/2 text-[10px] bg-vault-surface border border-vault-border px-1 py-0.5 text-vault-text-secondary tracking-mono-wide pointer-events-none">
                   ⌘K
                 </kbd>
               </div>
 
               {/* 搜索历史下拉 */}
               {showSearchHistory && !searchQuery && searchHistory.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-vault-surface border border-vault-border rounded-lg shadow-xl z-30 overflow-hidden">
-                  <div className="p-2 flex items-center justify-between border-b border-vault-border/50">
-                    <span className="text-xs text-vault-text-muted font-medium">搜索历史</span>
+                <div className="absolute top-full left-0 right-0 mt-0.5 bg-vault-surface border border-vault-border rounded-none shadow-xl z-30 overflow-hidden">
+                  <div className="px-3 py-1.5 flex items-center justify-between border-b border-vault-border">
+                    <span className="text-caps text-vault-text-muted">history</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1038,16 +1043,16 @@ export default function Items() {
 
             {/* 类型筛选标签 + 排序 + 收藏 */}
             <div className="flex items-center gap-2 flex-wrap">
-              {/* 类型筛选标签 */}
+              {/* 类型筛选标签 — 锐角 mono chips */}
               <div className="flex items-center gap-1 flex-wrap">
                 {typeFilters.map((filter) => (
                   <button
                     key={filter.key}
                     className={cn(
-                      'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                      'flex items-center gap-1 px-2 py-1 rounded-none text-log font-medium transition-colors border',
                       activeTypeFilter === filter.key
-                        ? 'bg-vault-accent/15 text-vault-accent'
-                        : 'bg-vault-hover text-vault-text-secondary hover:text-vault-text',
+                        ? 'bg-vault-accent/10 text-vault-accent border-vault-accent/40'
+                        : 'bg-vault-bg text-vault-text-secondary border-vault-border hover:text-vault-text hover:border-vault-border-strong',
                     )}
                     onClick={() => handleTypeFilter(filter.key)}
                   >
@@ -1063,24 +1068,24 @@ export default function Items() {
               {/* 排序下拉 */}
               <div className="relative">
                 <button
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 rounded-none text-log text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors border border-transparent hover:border-vault-border"
                   onClick={() => setShowSortDropdown(!showSortDropdown)}
                 >
-                  <SlidersHorizontal size={13} />
+                  <SlidersHorizontal size={12} />
                   {sortOptions.find((o) => o.key === sortBy)?.label}
-                  <ChevronDown size={12} />
+                  <ChevronDown size={11} />
                 </button>
 
                 {showSortDropdown && (
                   <>
                     {/* 点击外部关闭 */}
                     <div className="fixed inset-0 z-10" onClick={() => setShowSortDropdown(false)} />
-                    <div className="absolute right-0 top-full mt-1 z-20 w-36 bg-vault-surface border border-vault-border rounded-lg shadow-lg py-1">
+                    <div className="absolute right-0 top-full mt-0.5 z-20 w-36 bg-vault-surface border border-vault-border rounded-none shadow-lg py-0.5">
                       {sortOptions.map((option) => (
                         <button
                           key={option.key}
                           className={cn(
-                            'w-full text-left px-3 py-1.5 text-xs transition-colors',
+                            'w-full text-left px-3 py-1.5 text-log transition-colors',
                             sortBy === option.key
                               ? 'text-vault-accent bg-vault-accent/10'
                               : 'text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text',
@@ -1098,15 +1103,15 @@ export default function Items() {
               {/* 仅收藏开关 */}
               <button
                 className={cn(
-                  'flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-colors',
+                  'flex items-center gap-1 px-2 py-1 rounded-none text-log transition-colors border',
                   showFavoritesOnly
-                    ? 'bg-vault-orange/15 text-vault-orange'
-                    : 'text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text',
+                    ? 'bg-vault-orange/15 text-vault-orange border-vault-orange/40'
+                    : 'text-vault-text-secondary border-transparent hover:bg-vault-hover hover:text-vault-text hover:border-vault-border',
                 )}
                 onClick={handleToggleFavorites}
                 title="仅显示收藏"
               >
-                <Star size={13} className={showFavoritesOnly ? 'fill-vault-orange' : ''} />
+                <Star size={12} className={showFavoritesOnly ? 'fill-vault-orange' : ''} />
                 收藏
               </button>
             </div>
@@ -1118,7 +1123,7 @@ export default function Items() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleSelectAll}
-                  className="p-1 rounded hover:bg-vault-hover transition-colors"
+                  className="p-1 rounded-none hover:bg-vault-hover transition-colors"
                 >
                   <CheckSquare size={16} className="text-vault-accent" />
                 </button>
@@ -1127,7 +1132,7 @@ export default function Items() {
                 </span>
                 <button
                   onClick={clearSelection}
-                  className="text-sm text-vault-accent hover:text-vault-accent-hover transition-colors"
+                  className="text-log text-vault-accent hover:text-vault-accent-hover transition-colors"
                 >
                   取消选择
                 </button>
@@ -1135,28 +1140,28 @@ export default function Items() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowMoveDropdown(!showMoveDropdown)}
-                  className="vault-btn-secondary flex items-center gap-1 text-sm"
+                  className="vault-btn-secondary flex items-center gap-1 text-log"
                 >
                   <Move size={14} />
                   移动到
                 </button>
                 <button
                   onClick={() => setShowTagDropdown(!showTagDropdown)}
-                  className="vault-btn-secondary flex items-center gap-1 text-sm"
+                  className="vault-btn-secondary flex items-center gap-1 text-log"
                 >
                   <Tag size={14} />
                   标签
                 </button>
                 <button
                   onClick={handleBatchExport}
-                  className="vault-btn-secondary flex items-center gap-1 text-sm"
+                  className="vault-btn-secondary flex items-center gap-1 text-log"
                 >
                   <Download size={14} />
                   导出
                 </button>
                 <button
                   onClick={handleBatchDelete}
-                  className="vault-btn-secondary flex items-center gap-1 text-sm text-vault-warn hover:text-vault-warn/80"
+                  className="vault-btn-secondary flex items-center gap-1 text-log text-vault-warn hover:text-vault-warn/80"
                 >
                   <Trash2 size={14} />
                   删除
@@ -1167,10 +1172,10 @@ export default function Items() {
               {showMoveDropdown && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowMoveDropdown(false)} />
-                  <div className="absolute right-4 top-full mt-1 z-20 w-48 bg-vault-surface border border-vault-border rounded-lg shadow-lg py-1">
+                  <div className="absolute right-4 top-full mt-1 z-20 w-48 bg-vault-surface border border-vault-border rounded-none shadow-lg py-1">
                     <button
                       key="none"
-                      className="w-full text-left px-3 py-2 text-sm text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
+                      className="w-full text-left px-3 py-2 text-log text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
                       onClick={() => handleBatchMove('')}
                     >
                       无文件夹
@@ -1178,7 +1183,7 @@ export default function Items() {
                     {currentVaultFolders.map((folder) => (
                       <button
                         key={folder.id}
-                        className="w-full text-left px-3 py-2 text-sm text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
+                        className="w-full text-left px-3 py-2 text-log text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
                         onClick={() => handleBatchMove(folder.id)}
                       >
                         {folder.name}
@@ -1192,13 +1197,13 @@ export default function Items() {
               {showTagDropdown && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowTagDropdown(false)} />
-                  <div className="absolute right-4 top-full mt-1 z-20 w-56 bg-vault-surface border border-vault-border rounded-lg shadow-lg py-2">
+                  <div className="absolute right-4 top-full mt-1 z-20 w-56 bg-vault-surface border border-vault-border rounded-none shadow-lg py-2">
                     <p className="px-3 py-1 text-xs text-vault-text-muted font-medium">添加标签</p>
                     {allTags.length > 0 ? (
                       allTags.map((tag) => (
                         <button
                           key={`add-${tag}`}
-                          className="w-full text-left px-3 py-1.5 text-sm text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
+                          className="w-full text-left px-3 py-1.5 text-log text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors"
                           onClick={() => handleBatchTag(tag)}
                         >
                           <span className="vault-badge bg-vault-accent/20 text-vault-accent text-xs mr-2">+</span>
@@ -1229,7 +1234,7 @@ export default function Items() {
           {/* 保险库选择器 */}
           <div className="relative mb-4">
             <button
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-vault-surface border border-vault-border text-sm hover:border-vault-accent/30 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-none bg-vault-surface border border-vault-border text-log hover:border-vault-accent/30 transition-colors"
               onClick={() => setShowVaultDropdown(!showVaultDropdown)}
             >
               {/* 当前保险库颜色点 */}
@@ -1245,7 +1250,7 @@ export default function Items() {
               <>
                 {/* 点击外部关闭 */}
                 <div className="fixed inset-0 z-10" onClick={() => setShowVaultDropdown(false)} />
-                <div className="absolute left-0 top-full mt-1 z-20 w-56 bg-vault-surface border border-vault-border rounded-lg shadow-lg py-1">
+                <div className="absolute left-0 top-full mt-1 z-20 w-56 bg-vault-surface border border-vault-border rounded-none shadow-lg py-1">
                   {vaults.map((vault) => {
                     // 计算该保险库的实际条目数
                     const vaultItemCount = items.filter((i) => i.vaultId === vault.id).length;
@@ -1253,7 +1258,7 @@ export default function Items() {
                       <button
                         key={vault.id}
                         className={cn(
-                          'w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors',
+                          'w-full flex items-center gap-2 px-3 py-2 text-log transition-colors',
                           currentVaultId === vault.id
                             ? 'bg-vault-accent/10 text-vault-accent'
                             : 'text-vault-text hover:bg-vault-hover',
@@ -1278,7 +1283,7 @@ export default function Items() {
           {currentVaultFolders.length > 0 && (
             <div className="relative mb-4">
               <button
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-vault-surface border border-vault-border text-sm hover:border-vault-accent/30 transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-none bg-vault-surface border border-vault-border text-log hover:border-vault-accent/30 transition-colors"
                 onClick={() => setShowFolderDropdown(!showFolderDropdown)}
               >
                 <FolderOpen size={14} className="text-vault-accent" />
@@ -1304,10 +1309,10 @@ export default function Items() {
               {showFolderDropdown && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowFolderDropdown(false)} />
-                  <div className="absolute left-0 top-full mt-1 z-20 w-56 bg-vault-surface border border-vault-border rounded-lg shadow-lg py-1">
+                  <div className="absolute left-0 top-full mt-1 z-20 w-56 bg-vault-surface border border-vault-border rounded-none shadow-lg py-1">
                     <button
                       className={cn(
-                        'w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors',
+                        'w-full flex items-center gap-2 px-3 py-2 text-log transition-colors',
                         !selectedFolderId
                           ? 'bg-vault-accent/10 text-vault-accent'
                           : 'text-vault-text hover:bg-vault-hover',
@@ -1324,7 +1329,7 @@ export default function Items() {
                       <button
                         key={folder.id}
                         className={cn(
-                          'w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors',
+                          'w-full flex items-center gap-2 px-3 py-2 text-log transition-colors',
                           selectedFolderId === folder.id
                             ? 'bg-vault-accent/10 text-vault-accent'
                             : 'text-vault-text hover:bg-vault-hover',
@@ -1341,7 +1346,7 @@ export default function Items() {
                     ))}
                     <div className="border-t border-vault-border my-1" />
                     <button
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-vault-accent hover:bg-vault-accent/10 transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-log text-vault-accent hover:bg-vault-accent/10 transition-colors"
                       onClick={() => {
                         setShowFolderDropdown(false);
                         setShowNewFolderModal(true);
@@ -1383,7 +1388,7 @@ export default function Items() {
             <button
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="p-1.5 rounded-lg text-vault-text-muted hover:text-vault-text hover:bg-vault-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded-none text-vault-text-muted hover:text-vault-text hover:bg-vault-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronDown size={14} className="rotate-90" />
             </button>
@@ -1395,7 +1400,7 @@ export default function Items() {
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
                   className={cn(
-                    'px-2.5 py-1 text-xs rounded-lg transition-colors',
+                    'px-2.5 py-1 text-log rounded-none transition-colors',
                     currentPage === pageNum
                       ? 'bg-vault-accent text-vault-bg'
                       : 'text-vault-text-muted hover:text-vault-text hover:bg-vault-hover'
@@ -1408,7 +1413,7 @@ export default function Items() {
             <button
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
-              className="p-1.5 rounded-lg text-vault-text-muted hover:text-vault-text hover:bg-vault-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded-none text-vault-text-muted hover:text-vault-text hover:bg-vault-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronDown size={14} className="-rotate-90" />
             </button>
@@ -1431,7 +1436,7 @@ export default function Items() {
                   <button
                     key={tag}
                     className={cn(
-                      'w-full text-left px-2.5 py-1.5 rounded-lg text-sm transition-colors truncate',
+                      'w-full text-left px-2.5 py-1.5 rounded-none text-log transition-colors truncate',
                       tagFilter === tag
                         ? 'bg-vault-accent/15 text-vault-accent font-medium'
                         : 'text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text',
@@ -1492,14 +1497,14 @@ export default function Items() {
                       setShowNewFolderModal(false);
                       setNewFolderName('');
                     }}
-                    className="px-4 py-2 text-sm text-vault-text-secondary hover:text-vault-text transition-colors"
+                    className="px-4 py-2 text-log text-vault-text-secondary hover:text-vault-text transition-colors"
                   >
                     取消
                   </button>
                   <button
                     onClick={handleCreateFolder}
                     disabled={!newFolderName.trim()}
-                    className="px-4 py-2 text-sm bg-vault-accent text-white rounded-lg hover:bg-vault-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-log bg-vault-accent text-white rounded-none hover:bg-vault-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     创建
                   </button>

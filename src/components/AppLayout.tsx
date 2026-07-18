@@ -98,7 +98,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <div className="fixed inset-0 z-50 md:hidden">
           {/* 遮罩层 */}
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/60"
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* 侧边栏 */}
@@ -110,56 +110,60 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* 右侧内容区域 */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* 顶部栏 */}
-        <header className="relative flex items-center gap-3 h-14 px-4 bg-vault-surface/60 backdrop-blur-xl shrink-0">
+        {/* 顶部栏 — 日志式状态行 */}
+        <header className="relative flex items-center gap-3 h-12 px-4 bg-vault-surface border-b border-vault-border shrink-0">
           {/* 移动端汉堡菜单 */}
           <button
-            className="md:hidden p-1.5 rounded-lg text-vault-text-secondary hover:bg-vault-hover transition-colors"
+            className="md:hidden p-1.5 rounded-none text-vault-text-secondary hover:bg-vault-hover transition-colors"
             onClick={() => setMobileMenuOpen(true)}
+            aria-label="打开菜单"
           >
-            <Menu size={20} />
+            <Menu size={18} />
           </button>
 
-          {/* 面包屑 */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-vault-text-muted">VaultKey</span>
+          {/* 面包屑 — 终端路径样式 */}
+          <div className="flex items-center gap-1.5 text-log">
+            <span className="text-vault-accent font-semibold">vaultkey</span>
+            <span className="text-vault-text-muted">:</span>
+            <span className="text-vault-text-muted">~</span>
             <span className="text-vault-text-muted">/</span>
-            <span className="text-vault-text font-medium">{breadcrumb}</span>
+            <span className="text-vault-text-secondary">{breadcrumb}</span>
+            <span className="text-vault-accent caret" aria-hidden="true" />
           </div>
 
           {/* 右侧操作按钮 */}
           <div className="ml-auto flex items-center gap-2">
-            {/* 快速搜索按钮 */}
+            {/* 快速搜索按钮 — 终端 prompt 样式 */}
             <button
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-vault-text-muted bg-vault-hover/50 hover:bg-vault-hover transition-colors"
+              className="flex items-center gap-2 px-2.5 py-1 rounded-none text-log text-vault-text-muted bg-vault-bg border border-vault-border hover:border-vault-border-strong hover:text-vault-text transition-colors"
               onClick={() => setCommandPaletteOpen(true)}
               title="快速搜索 (Ctrl+K)"
             >
-              <Search size={16} />
-              <span className="hidden sm:inline">搜索...</span>
-              <kbd className="hidden md:flex items-center px-1.5 py-0.5 text-xs bg-vault-surface border border-vault-border rounded">
+              <Search size={14} />
+              <span className="hidden sm:inline">search</span>
+              <kbd className="hidden md:flex items-center px-1.5 py-0.5 text-[10px] bg-vault-surface border border-vault-border text-vault-text-secondary tracking-mono-wide">
                 ⌘K
               </kbd>
             </button>
 
             {/* 通知 */}
             <button
-              className="p-2 rounded-lg text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors relative"
+              className="p-1.5 rounded-none text-vault-text-secondary hover:bg-vault-hover hover:text-vault-text transition-colors relative"
               onClick={() => navigate('/notifications')}
+              aria-label="通知"
             >
-              <Bell size={18} />
+              <Bell size={16} />
             </button>
 
             {/* 新建项目 */}
             <button
-              className="vault-btn-primary flex items-center gap-1.5 text-sm py-1.5 px-3"
+              className="vault-btn-primary flex items-center gap-1.5 text-log uppercase tracking-mono-wide py-1.5 px-3"
               onClick={() => navigate('/items/new')}
             >
-              <Plus size={16} />
-              <span>新建</span>
+              <Plus size={14} />
+              <span>new</span>
             </button>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-vault-border/50 to-transparent" />
         </header>
 
         {/* 主内容区域 */}
